@@ -1,378 +1,224 @@
 concept_id,label,frequency
-user,user,169
-service,service,58
-card,card,52
-merchant,merchant,44
-platform,platform,44
-review,review,36
-button,button,36
-logo,logo,35
-student,student,34
-theme_toggle,theme toggle,30
-document,document,27
-profile_button,profile button,26
-hero_section,hero section,24
+user,user,95
+service,service,37
+merchant,merchant,30
+platform,platform,26
+card,card,26
+review,review,25
 null,null,22
-food,food,22
-header,header,22
-bottom,bottom,22
-rating,rating,21
-unieasy,unieasy,20
-home_page,home page,20
-interactive_element,interactive element,20
-campus,campus,20
-advertisement,advertisement,19
-action,action,19
+student,student,21
 text_null,text null,18
-accessibility,accessibility,18
-consistency,consistency,18
-accommodation,accommodation,18
-right_corner,right corner,18
-right_side,right side,18
+logo,logo,18
+button,button,18
 uuid,uuid,17
 primary_key,primary key,16
-category_card,category card,16
-quick_link,quick link,16
-input_field,input field,16
-home,home,16
-left_corner,left corner,16
-feature_card,feature cards,16
-top,top,15
-role,role,15
-title,title,15
+theme_toggle,theme toggle,15
 supabase,supabase,14
-admin,admin,14
-clarity,clarity,14
-christ_university_central_campus,christ university central campus,14
-navigation_element,navigation element,14
-landing_page,landing page,14
-footer,footer,14
-screen,screen,14
-unieasy_platform,unieasy platform,14
-form,form,14
-authentication,authentication,13
-filter,filter,13
-access,access,13
+role,role,13
+document,document,13
+profile_button,profile button,13
+admin,admin,12
 timestamptz,timestamptz,12
 default,default,12
-ui_design_document,ui design document,12
-navigation_structure,navigation structure,12
-eating_place,eating places,12
-search_bar,search bar,12
-usability,usability,12
-tablet,tablet,12
-hostel,hostel,12
-left,left,12
-footer_section,footer section,12
-light_dark_mode,light dark mode,12
-left_side,left side,12
+hero_section,hero section,12
 request,request,11
-text,text,11
-name,name,11
-datum,datum,11
-column,column,11
-detail,detail,10
-login,login,10
-student_essential,student essentials,10
-event,event,10
-module,module,10
-desktop,desktop,10
-interface,interface,10
-readability,readability,10
-descriptive_text,descriptive text,10
-term,term,10
-right,right,10
-application,application,9
+action,action,11
+rating,rating,11
+food,food,11
+header,header,11
+bottom,bottom,11
+advertisement,advertisement,10
+column,column,10
+accessibility,accessibility,10
+unieasy,unieasy,10
+home_page,home page,10
+interactive_element,interactive element,10
+campus,campus,10
 column_type_description,column type description,9
 appuserid,appuserid,9
 default_genrandomuuid,default genrandomuuid,9
-icon,icon,9
-link,link,9
+text,text,9
+consistency,consistency,9
+accommodation,accommodation,9
+right_corner,right corner,9
+right_side,right side,9
+top,top,8
+authentication,authentication,8
+application,application,8
 database,database,8
 foreign_key,foreign keys,8
-status,status,8
 optional,optional,8
 createdat,createdat,8
+title,title,8
 index,index,8
-admin_dashboard,admin dashboard,8
-explore,explore,8
-safety,safety,8
-deal,deal,8
-user_interface,user interface,8
-study_zone,study zones,8
-amenity,amenity,8
-review_count,review count,8
-feedback,feedback,8
-mobile_device,mobile device,8
-campus_specific_service,campus specific service,8
-option,option,8
-carousel,carousel,8
-ui_design,ui design,8
-management,management,8
-account,account,8
-device,device,8
-context,context,8
-navigation_dot,navigation dot,8
-contact_information,contact information,8
-category_badge,category badge,8
-heading,heading,8
-rounded_corner,rounded corner,8
-page_title,page title,8
-main_content_area,main content area,8
-positioned,positioned,8
+datum,datum,8
+access,access,8
+category_card,category card,8
+quick_link,quick link,8
+input_field,input field,8
+home,home,8
+left_corner,left corner,8
+feature_card,feature cards,8
 postgresql,postgresql,7
 schema,schema,7
 clerk,clerk,7
 query,query,7
-design,design,7
 operation,operation,7
+status,status,7
 serviceid,serviceid,7
-terminology,terminology,7
-responsive_design,responsive design,7
-header_section,header section,7
-fig,fig,7
-display,display,7
-service_detail,service detail,7
+name,name,7
+filter,filter,7
+clarity,clarity,7
+christ_university_central_campus,christ university central campus,7
+navigation_element,navigation element,7
+landing_page,landing page,7
+footer,footer,7
+screen,screen,7
+unieasy_platform,unieasy platform,7
+form,form,7
 row_level_security,row level security,6
 superadmin,superadmin,6
 client,client,6
 policy,policy,6
-password,password,6
 merchant_record,merchant record,6
-system,system,6
-navigation_flow,navigation flow,6
-accommodation_pg_hostel,accommodation pg hostel,6
-nearby_place,nearby place,6
-emergency,emergency,6
-student_discount,student discounts,6
-functionality,functionality,6
-placement,placement,6
-signup_page,signup page,6
-contact_detail,contact detail,6
-distance,distance,6
-image_gallery,image gallery,6
-search,search,6
-visual_consistency,visual consistency,6
-navigation,navigation,6
-smooth_transition,smooth transition,6
-review_submission,review submission,6
-student_review,student reviews,6
-understanding,understanding,6
-user_interaction_pattern,user interaction pattern,6
-guest,guest,6
-price,price,6
-amenity_icon,amenity icon,6
-light_mode,light mode,6
-dark_mode,dark mode,6
-apartment,apartment,6
-large_visual_section,large visual section,6
-current_slide_position,current slide position,6
-previous_page,previous page,6
-privacy_policy,privacy policy,6
-wifi,wifi,6
-parking,parking,6
-welcome_panel,welcome panel,6
-subtle_shadow,subtle shadow,6
-depth,depth,6
-color_scheme,color scheme,6
-environment,environment,6
-information,information,6
-label,label,6
-top_left,top left,6
-center,center,6
-brief_description,brief description,6
-visibility_toggle,visibility toggle,6
-form_field,form field,6
-logout,logout,6
-dr_naived_george_eapen,dr naived george eapen,5
+detail,detail,6
+login,login,6
+ui_design_document,ui design document,6
+navigation_structure,navigation structure,6
+eating_place,eating places,6
+search_bar,search bar,6
+usability,usability,6
+tablet,tablet,6
+hostel,hostel,6
+left,left,6
+footer_section,footer section,6
+light_dark_mode,light dark mode,6
+left_side,left side,6
 database_level,database level,5
-user_role,user role,5
-category,category,5
-update,update,5
-email,email,5
-description,description,5
-validation,validation,5
-layout,layout,5
-top_right,top right,5
-user_profile,user profile,5
-nirupama_vincent,nirupama vincent,4
+admin_dashboard,admin dashboard,5
+student_essential,student essentials,5
+event,event,5
+module,module,5
+desktop,desktop,5
+interface,interface,5
+readability,readability,5
+icon,icon,5
+descriptive_text,descriptive text,5
+term,term,5
+right,right,5
 rls,rls,4
 relationship,relationship,4
+user_role,user role,4
 rls_policy,rls policy,4
+design,design,4
+password,password,4
 appuser,appuser,4
 merchantid,merchantid,4
+category,category,4
 none,none,4
 standard_null,standard null,4
 require_field_relationship,require field relationship,4
+update,update,4
 unique,unique,4
+email,email,4
 fk_appusersid,fk appusersid,4
 unique_constraint,unique constraint,4
-profile,profile,4
 delete_cascade,delete cascade,4
 key,key,4
-brand_identity,brand identity,4
-visual_layout,visual layout,4
-interaction_pattern,interaction pattern,4
-frontend_development,frontend development,4
-wireframe,wireframe,4
-component_placement,component placement,4
-responsive_design_consideration,responsive design consideration,4
-interface_structure,interface structure,4
-user_flow,user flow,4
-scope,scope,4
-ui_scope,ui scope,4
-search_functionality,search functionality,4
-explore_nearby,explore nearby,4
-feature_highlight,feature highlight,4
-service_list_page,service list pages,4
-result_counter,result counter,4
-merchant_dashboard,merchant dashboard,4
-review_moderation,review moderation,4
-super_admin_dashboard,super admin dashboard,4
-career_skill_support,career skill support,4
-confusion,confusion,4
-prominent_category_card,prominent category card,4
-large_screen,large screen,4
-user_comfort,user comfort,4
-recommendation,recommendation,4
-typography,typography,4
-reliability,reliability,4
-feature,feature,4
-verified_listing,verified listings,4
-real_time_update,real time update,4
-accuracy,accuracy,4
-trust,trust,4
-evaluation,evaluation,4
-visual_interface,visual interface,4
-safety_resource,safety resource,4
-visual_hierarchy,visual hierarchy,4
-alignment,alignment,4
-structure,structure,4
-merchant_portal,merchant portal,4
-background_image,background image,4
-navigation_link,navigation link,4
-distance_information,distance information,4
-user_account_setting,user account setting,4
-logout_option,logout option,4
-interactive_control,interactive control,4
-sort_option,sort options,4
-service_listing,service listing,4
-user_interface_adapt,user interface adapt,4
-different_screen_size,different screen size,4
-service_category,service category,4
-home_screen,home screen,4
-development_team_credit,development team credit,4
-available_facility,available facility,4
-security,security,4
-location_icon,location icon,4
-proximity,proximity,4
-green_text,green text,4
-eg_89_review,eg 89 review,4
-star_icon,star icon,4
-overall_rating_score,overall rating score,4
-service_type,service type,4
-multi_step_registration_process,multi step registration process,4
-basic_information,basic information,4
-clickable_link,clickable link,4
-interface_component,interface component,4
-essential_information,essential information,4
-cognitive_load,cognitive load,4
-subheading,subheading,4
-layout_structure,layout structure,4
-structured_module_organization,structured module organization,4
-flexible_layout_container,flexible layout container,4
-screen_width,screen width,4
-component_alignment,component alignment,4
-layout_shift,layout shift,4
-navigation_menu,navigation menu,4
-wide_screen,wide screen,4
-visual_element,visual element,4
-aspect_ratio,aspect ratio,4
-distortion,distortion,4
-container,container,4
-horizontal_scrolling,horizontal scrolling,4
-background,background,4
-hover_effect,hover effect,4
-focus_indicator,focus indicator,4
-light_text,light text,4
-eye_strain,eye strain,4
-theme_support,theme support,4
-placeholder_text,placeholder text,4
-central_logo,central logo,4
-platform_purpose,platform purpose,4
-registration_process,registration process,4
-quick_access,quick access,4
-exist_user,exist user,4
-brand_identification,brand identification,4
-purpose,purpose,4
-login_credential,login credential,4
-eye_icon,eye icon,4
-password_field,password field,4
-verification,verification,4
-registration,registration,4
-comfortable_viewing,comfortable viewing,4
-homepage,homepage,4
-home_link,home link,4
-logout_button,logout button,4
-hide_gem,hide gem,4
-listing,listing,4
-service_name,service name,4
-accommodation_type,accommodation type,4
-property_photo,property photo,4
-property,property,4
-facility,facility,4
-write_review_button,write review button,4
-authenticate_user,authenticate user,4
-website,website,4
-left_panel,left panel,4
-username,username,4
-back,back,4
-dashboard_title_section,dashboard title section,4
-pende_advertisement,pende advertisement,4
-refresh_button,refresh button,4
-administrator,administrator,4
-request_card,request cards,4
-write_review,write review,4
-hierarchy,hierarchy,4
-input,input,4
-mca,mca,3
+terminology,terminology,4
+responsive_design,responsive design,4
+explore,explore,4
+safety,safety,4
+deal,deal,4
+user_interface,user interface,4
+study_zone,study zones,4
+amenity,amenity,4
+review_count,review count,4
+feedback,feedback,4
+mobile_device,mobile device,4
+campus_specific_service,campus specific service,4
+option,option,4
+carousel,carousel,4
+ui_design,ui design,4
+management,management,4
+account,account,4
+device,device,4
+context,context,4
+navigation_dot,navigation dot,4
+contact_information,contact information,4
+category_badge,category badge,4
+heading,heading,4
+rounded_corner,rounded corner,4
+page_title,page title,4
+header_section,header section,4
+main_content_area,main content area,4
+positioned,positioned,4
+display,display,4
+service_detail,service detail,4
+nirupama_vincent,nirupama vincent,3
+dr_naived_george_eapen,dr naived george eapen,3
 rest,rest,3
 role_base_access,role base access,3
-user_authentication,user authentication,3
-team,team,3
 appusersid,appusersid,3
 appuser_record,appuser record,3
 specific_service,specific service,3
 approvedbyappuserid,approvedbyappuserid,3
 constraint,constraint,3
-registered_user,registered user,3
 actor,actor,3
+description,description,3
 valid_user,valid user,3
+profile,profile,3
 merchant_ad,merchant ad,3
 filter_query,filter query,3
 indexing,indexing,3
-light,light,3
-communication,communication,3
-vishwas_vashishtha,vishwas vashishtha,3
-13_ui_design_objective,13 ui design objective,3
-25_theme_support,25 theme support,3
-listing_page,listing page,3
-37_user_profile,37 user profile,3
-styling_51_color_scheme,styling 51 color scheme,3
-spacing,spacing,3
-element,element,3
-user_interface_screen,user interface screen,3
-guest_user,guest user,3
-padding,padding,3
-clear_separation,clear separation,3
-size,size,3
-university,university,3
-theme,theme,3
-access_account_option,access account option,3
-profile_overview,profile overview,3
-admin_panel,admin panel,3
-moderate_review,moderate reviews,3
-system_analytics,system analytics,3
+validation,validation,3
+system,system,3
+navigation_flow,navigation flow,3
+accommodation_pg_hostel,accommodation pg hostel,3
+nearby_place,nearby place,3
+emergency,emergency,3
+student_discount,student discounts,3
+functionality,functionality,3
+placement,placement,3
+signup_page,signup page,3
+contact_detail,contact detail,3
+distance,distance,3
+image_gallery,image gallery,3
+search,search,3
+visual_consistency,visual consistency,3
+navigation,navigation,3
+smooth_transition,smooth transition,3
+review_submission,review submission,3
+student_review,student reviews,3
+understanding,understanding,3
+user_interaction_pattern,user interaction pattern,3
+guest,guest,3
+price,price,3
+amenity_icon,amenity icon,3
+link,link,3
+light_mode,light mode,3
+dark_mode,dark mode,3
+apartment,apartment,3
+large_visual_section,large visual section,3
+current_slide_position,current slide position,3
+previous_page,previous page,3
+privacy_policy,privacy policy,3
+wifi,wifi,3
+parking,parking,3
+welcome_panel,welcome panel,3
+subtle_shadow,subtle shadow,3
+depth,depth,3
+color_scheme,color scheme,3
+environment,environment,3
+information,information,3
+label,label,3
+top_left,top left,3
+center,center,3
+brief_description,brief description,3
+visibility_toggle,visibility toggle,3
+form_field,form field,3
+logout,logout,3
+mca,mca,2
 university_bangalore_central_campus_guide,university bangalore central campus guide,2
 21_client_supabase_api,21 client supabase api,2
 22_use,22 use,2
@@ -389,10 +235,12 @@ backup_security_consideration,backup security considerations,2
 sql_injection_protection,sql injection protection,2
 auto_generate_rest_api,auto generate rest api,2
 foreign_key_constraint,foreign key constraint,2
+user_authentication,user authentication,2
 caller,caller,2
 postgrest,postgrest,2
 websocket,websocket,2
 polling,polling,2
+team,team,2
 postgresql_database,postgresql database,2
 endpoint,endpoint,2
 public_content,public content,2
@@ -402,7 +250,6 @@ constraint_appuserid,constraints appuserid,2
 strict_relationship,strict relationship,2
 belong,belong,2
 durationday,durationday,2
-duration,duration,2
 timestamp_primary_key,timestamp primary key,2
 place_record,place record,2
 physical_place,physical place,2
@@ -410,6 +257,7 @@ placeid,placeid,2
 placesid,placesid,2
 none_constraint,none constraints,2
 comment,comment,2
+registered_user,registered user,2
 rejection_reason,rejection reason,2
 actorappuserid,actorappuserid,2
 placeid_uuid,placeid uuid,2
@@ -443,930 +291,146 @@ write_access,write access,2
 audit_log,audit log,2
 layer,layer,2
 ad_table,ad table,2
+light,light,2
 rls_evaluation,rls evaluation,2
-38_merchant_portal_interface,38 merchant portal interface,2
-310_super_admin_dashboard_interface,310 super admin dashboard interface,2
+communication,communication,2
+vishwas_vashishtha,vishwas vashishtha,2
+13_ui_design_objective,13 ui design objectives,2
+brand_identity,brand identity,2
+25_theme_support,25 theme support,2
+listing_page,listing pages,2
+37_user_profile,37 user profile,2
 visual,visual,2
-clear_structured_description,clear structured description,2
-user_interface_design,user interface design,2
-overall_interface_structure,overall interface structure,2
-core_module,core module,2
-support_module,support module,2
-career,career,2
-skill_support,skill support,2
-key_ui_element,key ui element,2
-sorting_option,sorting option,2
-clean_modern_student_friendly_design,clean modern student friendly design,2
-12_scope,12 scope,2
-visual_screen,visual screen,2
-interactive_component,interactive component,2
-verify_campus_area_service,verify campus area service,2
-clean_structured_web_base_platform,clean structured web base platform,2
-login_page,login page,2
-user_access,user access,2
-key_platform_benefit,key platform benefit,2
-filter_sort_option,filter sort option,2
-pricing,pricing,2
-service_detail_page,service detail page,2
-complete_service_information,complete service information,2
-additional_ui_component,additional ui component,2
-user_profile_page,user profile page,2
-advertisement_management,advertisement management,2
-system_monitoring,system monitoring,2
-sort_control,sort control,2
-category_navigation,category navigation,2
-carousel_navigation,carousel navigation,2
-responsive_layout_adjustment,responsive layout adjustment,2
-support,support,2
-web_base_access,web base access,2
-multi_campus_expansion,multi campus expansion,2
-advanced_automation_feature,advanced automation feature,2
-current_implementation_scope,current implementation scope,2
-ui_design_objective,ui design objective,2
-clean_modern_student_friendly_interface,clean modern student friendly interface,2
-primary_objective,primary objective,2
-unified_interface,unified interface,2
-consistent_structure_layout,consistent structure layout,2
-dependency,dependency,2
-fragmented_information_source,fragmented information source,2
-simple_intuitive_navigation,simple intuitive navigation,2
-clear_visual_hierarchy,clear visual hierarchy,2
-consistent_header_element,consistent header element,2
-key_objective,key objective,2
-flexible_layout,flexible layout,2
-multi_column_grid,multi column grid,2
-single_column_layout,single column layout,2
-small_device,small device,2
-light_dark_theme,light dark theme,2
-toggle_button,toggle button,2
-clear_visual_feedback,clear visual feedback,2
-easy_interaction,easy interaction,2
-high_usability,high usability,2
-minimal_visual_clutter,minimal visual clutter,2
-structured_listing_card,structured listing card,2
-essential_detail,essential detail,2
-distance_price_amenity,distance price amenity,2
-organize_service_detail_page,organize service detail page,2
-authenticated_feature,authenticated feature,2
-profile_management,profile management,2
-accountability_community_trust,accountability community trust,2
-branding,branding,2
-uniform_color_scheme,uniform color scheme,2
-layout_pattern,layout pattern,2
-campus_specific_focus,campus specific focus,2
-relevance,relevance,2
-objective,objective,2
-14_intended_user,14 intended users,2
-individual,individual,2
-development,development,2
-primary_audience,primary audience,2
-project_development_team_member,project development team member,2
-ui_ux_implementation,ui ux implementation,2
-component_design,component design,2
-navigation_flow_integration,navigation flow integration,2
-overall_visual_consistency,overall visual consistency,2
-frontend_development_team,frontend development team,2
-angel_blessy,angel blessy,2
-primary_reference,primary reference,2
-visual_component,visual component,2
-design_specification,design specification,2
-functional_web_page,functional web page,2
-detailed_wireframe_description,detailed wireframe description,2
-component_placement_specification,component placement specification,2
-systematic_frontend_implementation,systematic frontend implementation,2
-project_guide_academic_evaluator,project guide academic evaluators,2
-visual_design_approach,visual design approach,2
-identify_problem,identify problem,2
-fragmented_campus_relate_information,fragmented campus relate information,2
-centralized_access,centralized access,2
-essential_service,essential service,2
-career_support,career support,2
-documentation_testing_team_member,documentation testing team member,2
-complete_user_interface_flow,complete user interface flow,2
-navigation_path,navigation path,2
-wireframe_specification,wireframe specification,2
-implement_screen,implement screen,2
-document_assist,document assist,2
-test_case,test case,2
-user_acceptance_testing,user acceptance testing,2
-verifying,verifying,2
-usability_accessibility_standard,usability accessibility standard,2
-backend_development_team_member,backend development team members,2
-frontend_component,frontend component,2
-backend_api,backend api,2
-different_screen,different screen,2
-interface_trigger_backend_process,interface trigger backend process,2
-retrieval,retrieval,2
-ui_structure,ui structure,2
-backend_developer,backend developer,2
-appropriate_api_response,appropriate api response,2
-data_format,data format,2
-future_developer,future developers,2
-contributor,contributors,2
-ui_enhancement,ui enhancement,2
-feature_addition,feature addition,2
-responsive_design_improvement,responsive design improvement,2
-interface_refinement,interface refinement,2
-exist_design_structure,exist design structure,2
-navigation_pattern,navigation pattern,2
-component_organization,component organization,2
-wireframe_layout,wireframe layout,2
-element_placement,element placement,2
-maintainability,maintainability,2
-future_development_phase,future development phase,2
-ui_ux_designer,ui ux designers,2
-design_reviewer,design reviewers,2
-visual_improvement,visual improvement,2
-accessibility_enhancement,accessibility enhancement,2
-user_experience_refinement,user experience refinement,2
-current_interface_design,current interface design,2
-area,area,2
-improvement,improvement,2
-modification,modification,2
-stakeholder,stakeholder,2
-decision_maker,decision maker,2
-academic_supervisor,academic supervisor,2
-project_coordinator,project coordinator,2
-institutional_representative,institutional representative,2
-campus_associate_user,campus associate user,2
-comprehensive_overview,comprehensive overview,2
-user_experience_design,user experience design,2
-external_evaluator,external evaluators,2
-reviewer,reviewer,2
-project_presentation,project presentation,2
-demonstration,demonstration,2
-assessment,assessment,2
-detailed_understanding,detailed understanding,2
-interface_design,interface design,2
-component_functionality,component functionality,2
-platform_usability,platform usability,2
-effectiveness,effectiveness,2
-problem,problem,2
-scatter_campus_relate_information,scatter campus relate information,2
-structured_reference,structured reference,2
-development_team,development team,2
-design_development_process,design development process,2
-party,party,2
-creation,creation,2
-unieasy_platform_user_interface,unieasy platform user interface,2
-15_definition,15 definition,2
-key_term,key term,2
-concept,concept,2
-consistent_understanding,consistent understanding,2
-reader,reader,2
-essential_student_service,essential student service,2
-career_opportunity,career opportunity,2
-visual_interactive_component,visual interactive component,2
-visual_blueprint,visual blueprint,2
-skeletal_representation,skeletal representation,2
-ui_component,ui component,2
-detailed_visual_design_element,detailed visual design element,2
-initial_entry_screen,initial entry screen,2
-prominent_visual_area,prominent visual area,2
-large_heading,large heading,2
-welcome_message,welcome message,2
-visual_interactive_card,visual interactive card,2
-different_service_module,different service module,2
-place_count,place count,2
-list_card,list cards,2
-grid_base_visual_card,grid base visual card,2
-present_individual_service_option,present individual service option,2
-count,count,2
-distinct_functional_section,distinct functional section,2
-specific_service_category,specific service category,2
-organized_hierarchy,organized hierarchy,2
-flow,flow,2
-interactive_button,interactive button,2
-well_viewing_preference,well viewing preference,2
-different_module,different module,2
-keyword,keyword,2
-phrase,phrase,2
-filter_option,filter options,2
-display_service,display service,2
-category_specific_criterion,category specific criterion,2
-price_rating_nearest_distance,price rating nearest distance,2
-authenticated_user,authenticated user,2
-verified_credential,verified credential,2
-protect_feature,protect feature,2
-review_submission_profile_management,review submission profile management,2
-view_access,view access,2
-limited_functionality,limited functionality,2
-process,process,2
-honest_student_review,honest student review,2
-administrative_process,administrative process,2
-monitoring,monitoring,2
-user_submit_review,user submit review,2
-content_quality,content quality,2
-appropriateness,appropriateness,2
-platform_integrity,platform integrity,2
-separate_interface,separate interface,2
-run_advertisement_button,run advertisement button,2
-local_business_owner,local business owner,2
-promotional_offer,promotional offer,2
-administrative_interface,administrative interface,2
-authorize_administrator,authorize administrator,2
-tool,tool,2
-moderate_advertisement,moderate advertisement,2
-platform_operation,platform operation,2
-high_level_administrative_interface,high level administrative interface,2
-super_administrator,super administrator,2
-admin_activity,admin activity,2
-view_system_log,view system log,2
-admin_account,admin account,2
-access_system_wide_analytic,access system wide analytic,2
-design_approach,design approach,2
-desktop_tablet_mobile,desktop tablet mobile,2
-component_arrangement,component arrangement,2
-hero_banner,hero banner,2
-background_imagery,background imagery,2
-specific_action,specific action,2
-rotate_display_component,rotate display component,2
-multiple_item,multiple item,2
-position,position,2
-small_circular_indicator,small circular indicator,2
-different_carousel_item,different carousel item,2
-list_detail_page,list detail page,2
-consistent_element,consistent element,2
-copyright_detail,copyright detail,2
-password_validation,password validation,2
-real_time_feedback,real time feedback,2
-signup,signup,2
-enter_password,enter password,2
-require_criterion,require criterion,2
-character,character,2
-uppercase_lowercase_number_special_character,uppercase lowercase number special character,2
-small_visual_symbol,small visual symbol,2
-service_specific_amenity,service specific amenity,2
-distance_indicator_text,distance indicator text,2
-review_quote,review quote,2
-brief_italicize_text_snippet,brief italicize text snippet,2
-representative_user_review_comment,representative user review comment,2
-price_display,price display,2
-pricing_information,pricing information,2
-cost,cost,2
-eg_8000_month,eg 8000 month,2
-numerical_indicator,numerical indicator,2
-rating_display,rating display,2
-numerical_value,numerical value,2
-user_review,user review,2
-colored_label,colored label,2
-text_element,text element,2
-available_option,available option,2
-platform_name,platform name,2
-multi_slide_carousel_experience,multi slide carousel experience,2
-step_indicator,step indicator,2
-user_progress,user progress,2
-form_element,form element,2
-email_address,email address,2
-search_query,search query,2
-visual_brand_identifier,visual brand identifier,2
-client_server_architecture,client server architecture,2
-underlie_system_structure,underlie system structure,2
-client_interface,client interface,2
-web_browser,web browser,2
-data_processing,data processing,2
-storage,storage,2
-server_side,server side,2
-campus_specific_scope,campus specific scope,2
-intentional_limitation,intentional limitation,2
-high_relevance,high relevance,2
-location_specific_service_information,location specific service information,2
-definition,definition,2
-common_vocabulary,common vocabulary,2
-consistent_interpretation,consistent interpretation,2
-ui_design_principle,ui design principles,2
-clean_modern,clean modern,2
-student_friendly_design_approach,student friendly design approach,2
-unnecessary_visual_clutter,unnecessary visual clutter,2
-complexity,complexity,2
-clear_organized_manner,clear organized manner,2
-sufficient_white_space,sufficient white space,2
-proper_alignment,proper alignment,2
-logical_grouping,logical grouping,2
-related_element,related element,2
-consistent_use,consistent use,2
-modern_design_aesthetic,modern design aesthetic,2
-contemporary_visual_element,contemporary visual element,2
-clean_typography,clean typography,2
-interface_state,interface state,2
-professional_appearance,professional appearance,2
-student_friendly_aspect,student friendly aspect,2
-campus_community,campus community,2
-regular_engagement,regular engagement,2
-intuitive_pattern,intuitive pattern,2
-left_corner_navigation_utility_button,left corner navigation utility button,2
-primary_action,primary action,2
-clearly_define_section,clearly define section,2
-overall_design_philosophy_prioritize_user,overall design philosophy prioritize user,2
-straightforward_trustworthy_visually_consistent_manner,straightforward trustworthy visually consistent manner,2
-student_experience,student experience,2
-fundamental_principle,fundamental principle,2
-unieasy_ui_design,unieasy ui design,2
-complex_menu_structure,complex menu structure,2
-unclear_pathway,unclear pathway,2
-clear_entry_point,clear entry point,2
-visual_imagery,visual imagery,2
-informed_selection,informed selection,2
-dedicated_ui_screen,dedicated ui screen,2
-consistent_layout_pattern,consistent layout pattern,2
-uniform_structure,uniform structure,2
-easy_return_navigation,easy return navigation,2
-current_module,current module,2
-refining_result,refining result,2
-organize_scannable_format,organize scannable format,2
-user_confusion,user confusion,2
-predictable_interaction_pattern,predictable interaction pattern,2
-different_service_category,different service category,2
-current_position,current position,2
-simplified_user_flow,simplified user flow,2
-simple_navigation_path,simple navigation path,2
-efficient_resource_discovery,efficient resource discovery,2
-campus_relate_service,campus relate service,2
-core_principle,core principle,2
-consistent_usable_experience,consistent usable experience,2
-content_presentation,content presentation,2
-different_viewing_context,different viewing context,2
-large_desktop_screen,large desktop screen,2
-service_listing_card,service listing card,2
-multi_column_grid_layout,multi column grid layout,2
-typically_column,typically column,2
-multiple_option,multiple option,2
-small_mobile_screen,small mobile screen,2
-single_column_presentation,single column presentation,2
-filter_control,filter control,2
-touch_interaction,touch interaction,2
-mouse_pointer,mouse pointer,2
-desktop_system,desktop system,2
-simplified_vertical_structure,simplified vertical structure,2
-hamburger_menu_format,hamburger menu format,2
-narrow_display,narrow display,2
-excessive_screen_space,excessive screen space,2
-scale,scale,2
-comfortable_reading_experience,comfortable reading experience,2
-responsive_approach,responsive approach,2
-text_sizing,text sizing,2
-imagery_positioning,imagery positioning,2
-viewport_dimension,viewport dimension,2
-appropriate_column_count,appropriate column count,2
-screen_size,screen size,2
-breakpoint,breakpoint,2
-visual_crowding,visual crowding,2
-comprehensive_responsive_design_principle,comprehensive responsive design principle,2
-library_computer,library computer,2
-personal_laptop,personal laptop,2
-smartphone,smartphone,2
-entire_user_base,entire user base,2
-24_visual_consistency,24 visual consistency,2
-brand_identity_visual_consistency,brand identity visual consistency,2
-cohesive_user_experience,cohesive user experience,2
-interface_element,interface element,2
-iconography,iconography,2
-reliable_navigation_anchor,reliable navigation anchor,2
-header_structure,header structure,2
-left_utility_element,left utility element,2
-familiar_orientation_point,familiar orientation point,2
-journey,journey,2
-color_usage,color usage,2
-define_palette,define palette,2
-primary_color,primary color,2
-main_action,main action,2
-secondary_color,secondary color,2
-informational_element,informational element,2
-category_distinction,category distinction,2
-neutral_color,neutral color,2
-text_contrast,text contrast,2
-uniform_styling,uniform styling,2
-typography_hierarchy,typography hierarchy,2
-consistent_font_family,consistent font family,2
-weight,weight,2
-body_text,body text,2
-visual_harmony,visual harmony,2
-icon_style,icon style,2
-unified_icon_library,unified icon library,2
-visual_weight_design_language,visual weight design language,2
-styling,styling,2
-reliable_access,reliable access,2
-platform_detail,platform detail,2
-interactive_state,interactive state,2
-form_input,form input,2
-active_state,active state,2
-consistent_behavior_pattern,consistent behavior pattern,2
-system_responsiveness,system responsiveness,2
-visual_consistency_reinforce_brand_identity,visual consistency reinforce brand identity,2
-interface_pattern,interface pattern,2
-user_trust,user trust,2
-professional_polished_presentation,professional polished presentation,2
-unified_digital_ecosystem,unified digital ecosystem,2
-reliable_campus_specific_platform,reliable campus specific platform,2
-accessibility_theme_support,accessibility theme support,2
-fundamental_design_principle,fundamental design principle,2
-dark_display,dark display,2
-viewing_preference,viewing preference,2
-theme_toggle_button,theme toggle button,2
-immediate_access,immediate access,2
-view_experience,view experience,2
-separate_setting_screen,separate setting screen,2
-bright_background,bright background,2
-dark_text,dark text,2
-traditional_daytime_viewing_comfort,traditional daytime viewing comfort,2
-dark_background,dark background,2
-extended_browse_session,extended browse session,2
-nighttime_usage,nighttime usage,2
-theme_implementation,theme implementation,2
-consistent_visual_hierarchy,consistent visual hierarchy,2
-mode,mode,2
-appropriate_contrast_ratio,appropriate contrast ratio,2
-card_styling,card styling,2
-select_theme,select theme,2
-price_information,price information,2
-aesthetic_appeal,aesthetic appeal,2
-dual_theme_support,dual theme support,2
-consideration,consideration,2
-different_user,different user,2
-different_preference,different preference,2
-view_condition,view condition,2
-accessibility_consideration,accessibility consideration,2
-readable_font_size,readable font size,2
-excessive_zooming_sufficient_spacing,excessive zooming sufficient spacing,2
-accidental_click,accidental click,2
-user_action,user action,2
-button_press,button press,2
-form_submission,form submission,2
-logical_tab_order,logical tab order,2
-keyboard_navigation,keyboard navigation,2
-descriptive_label,descriptive label,2
-datum_entry,datum entry,2
-error_message,error message,2
-success_confirmation,success confirmation,2
-reassurance,reassurance,2
-varying_preference,varying preference,2
-ability,ability,2
-inclusive_adaptable_interface,inclusive adaptable interface,2
-header_area,header area,2
-well_view_preference,well view preference,2
-visual_focus,visual focus,2
-button_located,button located,2
-primary_call,primary call,2
-new_user,new user,2
-guest_button_positioned,guest button positioned,2
-main_content_card,main content card,2
-university_logo_section,university logo section,2
-middle_section,middle section,2
-institutional_affiliation,institutional affiliation,2
-explanatory_text,explanatory text,2
-advertisement_button_positioned,advertisement button positioned,2
-low_right_section,low right section,2
-advertising_campaign,advertising campaign,2
-copyright_information,copyright information,2
-user_reference,user reference,2
-32_signup_page,32 signup page,2
-signup_page_component_description,signup page component description,2
-progress,progress,2
-name_input_field_input_field,name input field input field,2
-user_complete_name,user complete name,2
-account_creation,account creation,2
-personalization_purpose,personalization purpose,2
-user_email,user email,2
-account_verification,account verification,2
-communication_purpose,communication purpose,2
-secure_password,secure password,2
-real_time_validation_requirement,real time validation requirement,2
-validation_criterion,validation criterion,2
-strong_password_creation,strong password creation,2
-password_accuracy,password accuracy,2
-choose_password,choose password,2
-button_prominent_action_button,button prominent action button,2
-step,step,2
-enter_information,enter information,2
-login_link_positioned,login link positioned,2
-continue_button,continue button,2
-quick_redirect,quick redirect,2
-sign_page,sign page,2
-new_account,new account,2
-engaging_visual_experience,engaging visual experience,2
-navigation_dot_small_circular_indicator,navigation dots small circular indicator,2
-multi_slide_welcome_carousel_feature,multi slide welcome carousel feature,2
-main_homepage,main homepage,2
-portal,portal,2
-page_title_login,page title login,2
-form_section,form section,2
-register_toggle_tab,register toggle tabs,2
-email_address_input_field,email address input field,2
-user_register_email_address,user register email address,2
-password_input_field,password input field,2
-second_input_field,second input field,2
-forgot_password_link,forgot password link,2
-password_recovery,password recovery,2
-credential,credential,2
-grant,grant,2
-successful_validation,successful validation,2
-quick_link_section,quick links section,2
-contact_section,contact us section,2
-display_email_address,displays email address,2
-phone_number,phone number,2
-physical_address,physical address,2
-user_support,user support,2
-inquiry,inquiry,2
-development_team_section,development team section,2
-team_member,team member,2
-copyright_text,copyright text,2
-bottom_footer,bottom footer,2
-display_ownership_right_information,display ownership right information,2
-34_home_page,34 home page,2
-user_attention,user attention,2
-platform_main_value_proposition,platform main value proposition,2
-main_heading,main heading,2
-additional_context,additional context,2
-food_spot,food spot,2
-menu,menus,2
-search_button_positioned,search button positioned,2
-relevant_result,relevant result,2
-downward_arrow,downward arrow,2
-fold,fold,2
-explore_category_section_title_positioned,explore categories section title positioned,2
-category_section,category section,2
-main_service_category,main service category,2
-eating,eating,2
-available_place,available place,2
-150_place,150 place,2
-cafe,cafe,2
-restaurant,restaurant,2
-street_food_option,street food option,2
-second_card,second card,2
-hostel_image,hostel image,2
-80_place,80 place,2
-rental,rental,2
-third_card,third card,2
-landmark_image,landmark image,2
-60_place,60 place,2
-park,park,2
-spot,spot,2
-additional_category_option,additional category option,2
-platform_unique_value_proposition,platform unique value proposition,2
-differentiator,differentiator,2
-listing_platform,listing platform,2
-shield_icon,shield icon,2
-highlight,highlight,2
-authenticity,authenticity,2
-quality_assurance,quality assurance,2
-second_feature_card,second feature card,2
-clock_icon,clock icon,2
-live_update,live update,2
-availability,availability,2
-current_information,current information,2
-thumb_icon,thumb icon,2
-honest_review,honest review,2
-fellow_student,fellow student,2
-community_driven,community driven,2
-fourth_feature_card,fourth feature card,2
-people_icon,people icon,2
-curated_recommendation,curated recommendations,2
-fifth_feature_card,fifth feature card,2
-highlight_ai_power_suggestion,highlight ai power suggestion,2
-user_preference,user preference,2
-personalize_experience,personalize experience,2
-nearby_discovery,nearby discovery,2
-sixth_feature_card,sixth feature card,2
-walking_distance,walking distance,2
-convenience,convenience,2
-feature_highlight_section,feature highlights section,2
-feature_section,feature section,2
-visual_carousel,visual carousel,2
-category_tag,category tag,2
-merchant_advertisement,merchant advertisement,2
-featured_image,featured image,2
-different_highlight,different highlight,2
-button_positioned,button positioned,2
-category_name,category name,2
-visual_appeal,visual appeal,2
-subtitle,subtitle,2
-perfect_home,perfect home,2
-search_result,search result,2
-type_filter_section,type filter section,2
-upper_right_area,upper right area,2
-label_type,label type,2
-filter_button,filter button,2
-apartment_option,apartment option,2
-sort_filter_section,sort filter section,2
-type_filter,type filter,2
-nearest,nearest,2
-grid_layout,grid layout,2
-column_grid_format,column grid format,2
-individual_accommodation_option,individual accommodation option,2
-key_information,key information,2
-easy_comparison,easy comparison,2
-card_category_badge_colored_label,card category badge colored label,2
-glance,glance,2
-card_rating_display_star_icon,card rating display star icon,2
-numerical_rating,numerical rating,2
-card_image,card image,2
-gallery,gallery,2
-card_title_property_name,card title property name,2
-main_identifier,main identifier,2
-distance_text,distance text,2
-convenience_assessment,convenience assessment,2
-amenity_icon_small_icon,amenity icons small icon,2
-security_feature,security feature,2
-review_quote_italicize_text,review quote italicize text,2
-highlight_review_comment,highlight review comment,2
-social_proof,social proof,2
-user_insight,user insight,2
-monthly_rental_cost,monthly rental cost,2
-8000_month,8000 month,2
-budget_planning,budget planning,2
-bottom_right,bottom right,2
-popularity,popularity,2
-36_service_detail_page_fig,36 service detail page fig,2
-previous_listing_page,previous listing page,2
-switching,switching,2
-accessing_user_account_option,accessing user account option,2
-service_name_title,service name title,2
-select_service,select service,2
-overall_rating,overall rating,2
-image_gallery_section,image gallery section,2
-large_rectangular_section,large rectangular section,2
-multiple_image,multiple image,2
-bookmark_button,bookmark button,2
-future_reference,future reference,2
-review_section,reviews section,2
-side_panel,side panel,2
-user_feedback_snippet,user feedback snippet,2
-experience,experience,2
-description_section,description section,2
-detailed_overview,detailed overview,2
-relevant_information,relevant information,2
-similar_service_section,similar services section,2
-card_format,card format,2
-exploration,exploration,2
-additional_review_section,additional reviews section,2
-similar_service,similar service,2
-detailed_review_preview,detailed review preview,2
-expand_user_feedback,expand user feedback,2
-standard_platform_detail,standard platform detail,2
-consistent_navigation,consistent navigation,2
-setting_fig,settings fig,2
-back_button,back button,2
-profile_overview_section,profile overview section,2
-user_profile_picture,user profile picture,2
-circular_frame,circular frame,2
-quick_summary,quick summary,2
-log_user_identity,log user identity,2
-edit_profile_button,edit profile button,2
-profile_information,profile information,2
-picture,picture,2
-setting_menu,settings menu,2
-sidebar_navigation,sidebar navigation,2
-selectable_option,selectable option,2
-account_setting,account setting,2
-notification_setting,notification setting,2
-privacy_setting,privacy setting,2
-sidebar,sidebar,2
-account_setting_section,account settings section,2
-editable_input_field,editable input field,2
-name_email_address,name email address,2
-confirm_new_password,confirm new password,2
-personal_account_detail,personal account detail,2
-save_change_button,save changes button,2
-update_account_information,update account information,2
-change,change,2
-standard_platform_information,standard platform information,2
-advertisement_dashboard,advertisement dashboard,2
-short_subtitle,short subtitle,2
-upload_advertisement_image_section,upload advertisement image section,2
-large_upload_box,large upload box,2
-file,file,2
-image_upload_guideline,image upload guidelines,2
-upload_area,upload area,2
-specifie,specifie,2
-image_size,image size,2
-jpg,jpg,2
-png,png,2
-maximum_file_size,maximum file size,2
-proper_submission,proper submission,2
-advertisement_detail_section,advertisement details section,2
-right_panel,right panel,2
-upload_section,upload section,2
-advertisement_submission,advertisement submission,2
-ad_title_field,ad title field,2
-single_line_input_field,single line input field,2
-advertisement_title,advertisement title,2
-multi_line_text_area,multi line text area,2
-additional_detail,additional detail,2
-offer,offer,2
-target_location_field,target location field,2
-relevant_location,relevant location,2
-duration_dropdown_dropdown_selector,duration dropdown dropdown selector,2
-advertisement_duration,advertisement duration,2
-eg_day,eg day,2
-14_day,14 day,2
-review_button,review button,2
-admin_approval,admin approval,2
-guideline_text,guidelines text,2
-small_text,small text,2
-submit_button,submit button,2
-submission,submission,2
-agreement,agreement,2
-advertising_guideline,advertising guideline,2
-tip,tip,2
-effective_advertisement_section,effective advertisements section,2
-main_upload,main upload,2
-detail_section,detail section,2
-informational_block,informational block,2
-clear_visuals,clear visuals,2
-strong_cta_limited_time,strong cta limited time,2
-block,block,2
-brief_guidance,brief guidance,2
-effective_advertisement,effective advertisement,2
-width_horizontal_bar,width horizontal bar,2
-simple_center_label_footer,simple center label footer,2
-platform_wireframe,platform wireframe,2
-39_admin_dashboard_interface_fig,39 admin dashboard interface fig,2
-platform_logo,platform logo,2
-home_option,home option,2
-appearance_control,appearance control,2
-account_access,account access,2
-title_section,title section,2
-late_pending_request,late pending request,2
-sidebar_navigation_panel,sidebar navigation panel,2
-vertical_list,vertical list,2
-advertisement_request,advertisement request,2
-submit_advertisement_request,submit advertisement request,2
-approve_reject_button,approve reject button,2
-status_indicator,status indicator,2
-current_state,current state,2
-pending,pending,2
-standard_footer_content,standard footer content,2
-home_button,home button,2
-easy_navigation,easy navigation,2
-administrative_access,administrative access,2
-account_option,account option,2
-super_admin_dashboard_title,super admin dashboard title,2
-user_statistic_section,user statistics section,2
-display_summary_card,display summary card,2
-admins,admins,2
-super_admins,super admins,2
-quick_overview,quick overview,2
-user_management_table,user management table,2
-date,date,2
-register_user,register user,2
-change_role_action,change role action,2
-action_column,actions column,2
-super_admin,super admin,2
-dropdown_option,dropdown option,2
-information_note_section,information note section,2
-inform,inform,2
-app,app,2
-update_role_permission,update role permission,2
-development_team_detail,development team detail,2
-consistent_platform_navigation,consistent platform navigation,2
-41_landing_page_landing_page,41 landing page landing page,2
-sign,sign,2
-login_home,login home,2
-limited,limited,2
-42_home_page_home_page,42 home page home page,2
-accommodation_category,accommodation category,2
-nearby_category,nearby category,2
-nearby_list_service_detail,nearby list service detail,2
-review_form,review form,2
-44_merchant_dashboard_merchant_dashboard,44 merchant dashboard merchant dashboard,2
-login_merchant_dashboard,login merchant dashboard,2
-manage_ad,manage ads,2
-monitor_admin,monitor admin,2
-view_log,view logs,2
-manage_admins,manage admins,2
-list_page,list page,2
-guest_access,guest access,2
-manage_user,manage users,2
-admin_access,admin access,2
-monitor_admin_activity,monitor admin activities,2
-system_log,system logs,2
-manage_admins_super_admin_setting,manage admins super admin setting,2
-palette_primary_color_unieasy,palette primary color unieasy,2
-emerald_green,emerald green,2
-primary_brand_color,primary brand color,2
-merchant_action,merchant action,2
-clear_visibility,clear visibility,2
-secondary_color_cyan,secondary colors cyan,2
-purple_gradient,purple gradient,2
-pink_magenta,pink magenta,2
-ec4899,ec4899,2
-platform_module,platform module,2
-purple,purple,2
-accommodation_service,accommodation service,2
-calmness,calmness,2
-pink_highlight,pink highlight,2
-energy,energy,2
-contrast,contrast,2
-neutral_color_dark_navy,neutral colors dark navy,2
-charcoal_tone,charcoal tone,2
-0f172a,0f172a,2
-primary_background,primary background,2
-focus,focus,2
-medium_gray,medium gray,2
-secondary_text,secondary text,2
-primary_text,primary text,2
-high_contrast_content,high contrast content,2
-accent_color_accent_tone,accent colors accent tone,2
-gold,gold,2
-star_rating,star rating,2
-critical_action,critical action,2
-tag,tag,2
-brand_consistency,brand consistency,2
-light_dark_theme_platform,light dark themes platform,2
-deep_navy_background,deep navy background,2
-white_surface,white surface,2
-sun_moon_toggle,sun moon toggle,2
-instant_visual_feedback,instant visual feedback,2
-theme_switching,theme switching,2
-inter,inter,2
-digital_readability,digital readability,2
-system_font_fallback,system font fallback,2
-cross_device_consistency,cross device consistency,2
-heading_hierarchy_h1,heading hierarchy h1,2
-4856px,4856px,2
-hero_title,hero title,2
-primary_page,primary page,2
-3240px,3240px,2
-semi,semi,2
-section_title,section title,2
-selective_emerald_highlight,selective emerald highlight,2
-2024px,2024px,2
-card_title,card title,2
-1418px,1418px,2
-comfortable_line_spacing,comfortable line spacing,2
-metadata,metadata,2
-small_size,small size,2
-muted_gray_tone,muted gray tone,2
-53_iconography_icon,53 iconography icon,2
-minimal_rounded_line_style,minimal rounded line style,2
-consistent_stroke_weight,consistent stroke weight,2
-navigation_icon,navigation icon,2
-arrow,arrow,2
-scroll_indicator,scroll indicator,2
-feature_icon,feature icon,2
-color_icon,color icon,2
-community,community,2
-housing,housing,2
-action_icon,action icon,2
-eye_toggle,eye toggle,2
-1656px,1656px,2
-importance,importance,2
-visual_balance,visual balance,2
-column_layout,column layout,2
-mobile,mobile,2
-8px_system,8px system,2
-consistent_padding,consistent padding,2
-margin,margin,2
-internal_padding_section,internal padding section,2
-space_range,space range,2
-6496px,6496px,2
-accessibility_touch_size_standard,accessibility touch size standard,2
-hero_content,hero content,2
-left_align_text,left align text,2
-solid_emerald_background,solid emerald background,2
-secondary_outlined_button,secondary outlined button,2
-transparent_background,transparent background,2
-border,border,2
-active_focus,active focus,2
-emerald_border,emerald border,2
-layered_shadow,layered shadow,2
-elevation,elevation,2
-interactivity,interactivity,2
-slight_scaling,slight scaling,2
-color_brightening,color brightening,2
-keyboard_accessibility,keyboard accessibility,2
-150300ms,150300ms,2
-skeleton_loader,skeleton loader,2
-perceive_performance,perceive performance,2
-distraction,distraction,2
-theme_transition,theme transition,2
-visual_discomfort,visual discomfort,2
-57_brand_identity_unieasy_logo,57 brand identity unieasy logo,2
-emerald_green_accent,emerald green accent,2
-consistent_typography,consistent typography,2
-christ_university_branding,christ university branding,2
-campus_affiliation_clarity,campus affiliation clarity,2
-platform_independence,platform independence,2
-responsive_design_unieasy_platform,responsive design unieasy platform,2
-responsiveness,responsiveness,2
-mind,mind,2
-consistent_experience,consistent experience,2
-small_screen_device,small screen device,2
-advertisement_section,advertisement section,2
-multi_column_layout,multi column layout,2
-small_screen,small screen,2
-single_column_structure,single column structure,2
-navigation_bar,navigation bar,2
-narrow_screen,narrow screen,2
-simplified_menu_structure,simplified menu structure,2
-space,space,2
-easy_selection,easy selection,2
-user_interaction,user interaction,2
-advertisement_banner,advertisement banner,2
-text_content,text content,2
-clarity_prevent_visual_clutter,clarity prevent visual clutter,2
-responsive_design_approach,responsive design approach,2
-different_resolution,different resolution,2
-compromising_functionality,compromising functionality,2
-streamlit,streamlit,2
-google_classroom,google classroom,2
+styling_51_color_scheme,styling 51 color scheme,2
+spacing,spacing,2
+layout,layout,2
+visual_layout,visual layout,2
+interaction_pattern,interaction pattern,2
+frontend_development,frontend development,2
+wireframe,wireframe,2
+component_placement,component placement,2
+responsive_design_consideration,responsive design consideration,2
+interface_structure,interface structure,2
+user_flow,user flow,2
+scope,scope,2
+ui_scope,ui scope,2
+search_functionality,search functionality,2
+explore_nearby,explore nearby,2
+feature_highlight,feature highlight,2
+element,element,2
+service_list_page,service list pages,2
+result_counter,result counter,2
+merchant_dashboard,merchant dashboard,2
+review_moderation,review moderation,2
+super_admin_dashboard,super admin dashboard,2
+career_skill_support,career skill support,2
+confusion,confusion,2
+prominent_category_card,prominent category card,2
+large_screen,large screen,2
+user_comfort,user comfort,2
+recommendation,recommendation,2
+typography,typography,2
+reliability,reliability,2
+feature,feature,2
+verified_listing,verified listings,2
+real_time_update,real time update,2
+accuracy,accuracy,2
+trust,trust,2
+evaluation,evaluation,2
+visual_interface,visual interface,2
+safety_resource,safety resource,2
+visual_hierarchy,visual hierarchy,2
+alignment,alignment,2
+structure,structure,2
+merchant_portal,merchant portal,2
+background_image,background image,2
+navigation_link,navigation link,2
+distance_information,distance information,2
+user_account_setting,user account setting,2
+logout_option,logout option,2
+interactive_control,interactive control,2
+sort_option,sort options,2
+service_listing,service listing,2
+user_interface_adapt,user interface adapt,2
+different_screen_size,different screen size,2
+service_category,service category,2
+home_screen,home screen,2
+development_team_credit,development team credit,2
+available_facility,available facility,2
+security,security,2
+location_icon,location icon,2
+proximity,proximity,2
+green_text,green text,2
+eg_89_review,eg 89 review,2
+star_icon,star icon,2
+overall_rating_score,overall rating score,2
+service_type,service type,2
+multi_step_registration_process,multi step registration process,2
+basic_information,basic information,2
+clickable_link,clickable link,2
+interface_component,interface component,2
+essential_information,essential information,2
+cognitive_load,cognitive load,2
+subheading,subheading,2
+layout_structure,layout structure,2
+structured_module_organization,structured module organization,2
+flexible_layout_container,flexible layout container,2
+screen_width,screen width,2
+component_alignment,component alignment,2
+layout_shift,layout shift,2
+navigation_menu,navigation menu,2
+wide_screen,wide screen,2
+visual_element,visual element,2
+aspect_ratio,aspect ratio,2
+distortion,distortion,2
+container,container,2
+horizontal_scrolling,horizontal scrolling,2
+padding,padding,2
+background,background,2
+hover_effect,hover effect,2
+focus_indicator,focus indicator,2
+light_text,light text,2
+eye_strain,eye strain,2
+theme_support,theme support,2
+placeholder_text,placeholder text,2
+central_logo,central logo,2
+platform_purpose,platform purpose,2
+registration_process,registration process,2
+quick_access,quick access,2
+exist_user,exist user,2
+brand_identification,brand identification,2
+purpose,purpose,2
+login_credential,login credential,2
+eye_icon,eye icon,2
+password_field,password field,2
+verification,verification,2
+registration,registration,2
+comfortable_viewing,comfortable viewing,2
+homepage,homepage,2
+home_link,home link,2
+logout_button,logout button,2
+top_right,top right,2
+hide_gem,hide gem,2
+listing,listing,2
+service_name,service name,2
+accommodation_type,accommodation type,2
+property_photo,property photo,2
+property,property,2
+facility,facility,2
+write_review_button,write review button,2
+website,website,2
+theme,theme,2
+access_account_option,access account option,2
+left_panel,left panel,2
+username,username,2
+back,back,2
+dashboard_title_section,dashboard title section,2
+pende_advertisement,pende advertisement,2
+refresh_button,refresh button,2
+administrator,administrator,2
+request_card,request cards,2
+user_profile,user profile,2
+write_review,write review,2
+system_analytics,system analytics,2
+hierarchy,hierarchy,2
+input,input,2

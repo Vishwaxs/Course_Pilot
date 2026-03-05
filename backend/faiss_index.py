@@ -27,7 +27,10 @@ from dotenv import load_dotenv
 load_dotenv()
 logger = logging.getLogger(__name__)
 
-FAISS_INDEX_DIR: str = os.getenv(\n    \"FAISS_INDEX_DIR\",\n    str(Path(__file__).resolve().parent.parent / \"data\" / \"faiss_index\"),\n)
+FAISS_INDEX_DIR: str = os.getenv(
+    "FAISS_INDEX_DIR",
+    str(Path(__file__).resolve().parent.parent / "data" / "faiss_index"),
+)
 INDEX_FILE: str = "index.faiss"
 META_FILE: str = "metadata.json"
 

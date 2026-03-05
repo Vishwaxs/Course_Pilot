@@ -99,6 +99,16 @@ def collect_all_documents(log_fn=None) -> list:
                 if log_fn:
                     log_fn(f"Transcribing {af.name}\u2026")
                 transcript = transcribe_audio(str(af))
+                # Skip mock/empty transcripts (Whisper not installed)
+                segs = transcript.get("segments", [])
+                if segs and any("Mock transcript" in s.get("text", "") for s in segs):
+                    if log_fn:
+                        log_fn(
+                            f"\u26a0\ufe0f {af.name}: Whisper not installed \u2014 "
+                            "audio cannot be transcribed. Install with: "
+                            "pip install openai-whisper"
+                        )
+                    continue
                 audio_docs = transcript_to_documents(transcript)
                 docs.extend(audio_docs)
                 if log_fn:
@@ -294,8 +304,18 @@ with tab_upload:
 
         all_files = (slide_files or []) + (audio_files or []) + (paper_files or [])
         if not all_files:
-            st.warning("No files uploaded. Please upload at least one file.")
-            log_pipeline("No uploads detected.")
+            # Check if there are existing files on disk to reprocess
+            _existing = list((upload_dir).glob("*.pdf")) if upload_dir.exists() else []
+            _existing += list((upload_dir / "papers").glob("*.pdf")) if (upload_dir / "papers").exists() else []
+            _existing += [
+                f for f in (upload_dir / "audio").iterdir()
+                if f.suffix.lower() in (".mp3", ".wav", ".m4a")
+            ] if (upload_dir / "audio").exists() else []
+            if not _existing:
+                st.warning("No files uploaded. Please upload at least one file.")
+                log_pipeline("No uploads detected.")
+            else:
+                log_pipeline(f"Re-processing {len(_existing)} existing file(s) on disk.")
 
         # Save uploaded files to disk, tracking types separately
         _slide_names: list = []
@@ -324,7 +344,10 @@ with tab_upload:
         try:
             docs = collect_all_documents(log_fn=log_pipeline)
             if not docs:
-                st.error("No documents found. Upload PDF/audio files first.")
+                st.error(
+                    "No processable documents found. "
+                    "Upload PDF slides or install openai-whisper for audio support."
+                )
                 log_pipeline("ERROR: No documents to process.")
             else:
                 log_pipeline(f"Total documents: {len(docs)}")
@@ -346,15 +369,22 @@ with tab_upload:
         if _pipeline_ok:
             progress.progress(100, text="\u2705 Ingestion complete!")
             log_pipeline("Ingestion pipeline finished.")
-            st.success("\u2705 Ingestion pipeline completed successfully!")
+            st.success(
+                f"\u2705 Ingestion complete! "
+                f"{n_v} document(s), {n_c} concepts, {n_e} relationships."
+            )
             st.rerun()
         else:
             progress.progress(100, text="\u26a0\ufe0f Ingestion had issues.")
             if not docs:
-                st.warning("No documents could be extracted from the uploaded files.")
+                st.warning(
+                    "No documents could be extracted. "
+                    "**PDF slides** are recommended for best results. "
+                    "Audio files require `openai-whisper` to be installed."
+                )
 
     if st.session_state.pipeline_logs:
-        with st.expander("\U0001f4cb Pipeline Logs", expanded=False):
+        with st.expander("\U0001f4cb Pipeline Logs", expanded=True):
             for entry in st.session_state.pipeline_logs[-20:]:
                 st.text(entry)
 
