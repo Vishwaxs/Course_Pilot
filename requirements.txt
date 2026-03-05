@@ -1,0 +1,17 @@
+
+
+streamlit>=1.24.0
+pdfplumber>=0.8.0
+PyMuPDF>=1.22.5
+openai-whisper>=20230314
+sentence-transformers>=2.2.2
+faiss-cpu>=1.7.4
+google-genai>=1.0.0
+neo4j>=5.10.0
+spacy>=3.6.0
+python-dotenv>=1.0.0
+networkx>=3.0
+pandas>=2.0
+numpy>=1.24
+matplotlib>=3.7
+nltk>=3.8

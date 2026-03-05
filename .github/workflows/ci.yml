@@ -1,0 +1,59 @@
+
+# What to change:
+#   1. Add secrets (OPENAI_API_KEY, etc.) in GitHub repo Settings → Secrets.
+#   2. Adjust Python version if needed.
+
+name: CI — CKG-JTT CoursePilot
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m spacy download en_core_web_sm
+
+      - name: Lint with ruff
+        run: |
+          pip install ruff
+          ruff check . --select E,W,F --ignore E501
+
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-line-length=120 --statistics
+
+      - name: Run tests
+        run: |
+          pytest tests/ -v --tb=short
+        env:
+          DATA_DIR: data/sample
+          GRAPH_BACKEND: networkx
+          LLM_PROVIDER: local

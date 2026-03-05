@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environments
+.env
+.venv/
+env/
+venv/
+
+# IDE
+.idea/
+.vscode/
+
+# Data artefacts (keep sample but ignore user data)
+data/raw/
+data/processed/
+data/faiss_index/
+data/neo4j_import/
+!data/sample/
+
+# Whisper cache
+*.pt
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Docker volumes
+neo4j_data/
+neo4j_logs/
