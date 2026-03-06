@@ -1,225 +1,78 @@
 concept_id,label,frequency
-user,user,95
-service,service,37
-merchant,merchant,30
-platform,platform,26
-card,card,26
-review,review,25
 null,null,22
-student,student,21
 text_null,text null,18
-logo,logo,18
-button,button,18
+service,service,17
+user,user,17
 uuid,uuid,17
+merchant,merchant,16
 primary_key,primary key,16
-theme_toggle,theme toggle,15
 supabase,supabase,14
-role,role,13
-document,document,13
-profile_button,profile button,13
-admin,admin,12
+review,review,14
 timestamptz,timestamptz,12
 default,default,12
-hero_section,hero section,12
 request,request,11
-action,action,11
-rating,rating,11
-food,food,11
-header,header,11
-bottom,bottom,11
-advertisement,advertisement,10
-column,column,10
-accessibility,accessibility,10
-unieasy,unieasy,10
-home_page,home page,10
-interactive_element,interactive element,10
-campus,campus,10
+role,role,11
+admin,admin,10
+student,student,9
 column_type_description,column type description,9
 appuserid,appuserid,9
 default_genrandomuuid,default genrandomuuid,9
-text,text,9
-consistency,consistency,9
-accommodation,accommodation,9
-right_corner,right corner,9
-right_side,right side,9
-top,top,8
-authentication,authentication,8
+column,column,9
 application,application,8
+platform,platform,8
 database,database,8
 foreign_key,foreign keys,8
 optional,optional,8
 createdat,createdat,8
-title,title,8
 index,index,8
-datum,datum,8
-access,access,8
-category_card,category card,8
-quick_link,quick link,8
-input_field,input field,8
-home,home,8
-left_corner,left corner,8
-feature_card,feature cards,8
 postgresql,postgresql,7
 schema,schema,7
 clerk,clerk,7
 query,query,7
 operation,operation,7
-status,status,7
 serviceid,serviceid,7
-name,name,7
-filter,filter,7
-clarity,clarity,7
-christ_university_central_campus,christ university central campus,7
-navigation_element,navigation element,7
-landing_page,landing page,7
-footer,footer,7
-screen,screen,7
-unieasy_platform,unieasy platform,7
-form,form,7
+text,text,7
 row_level_security,row level security,6
 superadmin,superadmin,6
 client,client,6
 policy,policy,6
 merchant_record,merchant record,6
-detail,detail,6
-login,login,6
-ui_design_document,ui design document,6
-navigation_structure,navigation structure,6
-eating_place,eating places,6
-search_bar,search bar,6
-usability,usability,6
-tablet,tablet,6
-hostel,hostel,6
-left,left,6
-footer_section,footer section,6
-light_dark_mode,light dark mode,6
-left_side,left side,6
+status,status,6
 database_level,database level,5
-admin_dashboard,admin dashboard,5
-student_essential,student essentials,5
-event,event,5
-module,module,5
-desktop,desktop,5
-interface,interface,5
-readability,readability,5
-icon,icon,5
-descriptive_text,descriptive text,5
-term,term,5
-right,right,5
+datum,datum,5
 rls,rls,4
 relationship,relationship,4
-user_role,user role,4
 rls_policy,rls policy,4
-design,design,4
-password,password,4
 appuser,appuser,4
 merchantid,merchantid,4
-category,category,4
 none,none,4
 standard_null,standard null,4
 require_field_relationship,require field relationship,4
-update,update,4
 unique,unique,4
-email,email,4
 fk_appusersid,fk appusersid,4
 unique_constraint,unique constraint,4
 delete_cascade,delete cascade,4
 key,key,4
-terminology,terminology,4
-responsive_design,responsive design,4
-explore,explore,4
-safety,safety,4
-deal,deal,4
-user_interface,user interface,4
-study_zone,study zones,4
-amenity,amenity,4
-review_count,review count,4
-feedback,feedback,4
-mobile_device,mobile device,4
-campus_specific_service,campus specific service,4
-option,option,4
-carousel,carousel,4
-ui_design,ui design,4
-management,management,4
-account,account,4
-device,device,4
-context,context,4
-navigation_dot,navigation dot,4
-contact_information,contact information,4
-category_badge,category badge,4
-heading,heading,4
-rounded_corner,rounded corner,4
-page_title,page title,4
-header_section,header section,4
-main_content_area,main content area,4
-positioned,positioned,4
-display,display,4
-service_detail,service detail,4
-nirupama_vincent,nirupama vincent,3
-dr_naived_george_eapen,dr naived george eapen,3
 rest,rest,3
+authentication,authentication,3
 role_base_access,role base access,3
+user_role,user role,3
 appusersid,appusersid,3
 appuser_record,appuser record,3
 specific_service,specific service,3
 approvedbyappuserid,approvedbyappuserid,3
+category,category,3
 constraint,constraint,3
 actor,actor,3
-description,description,3
+action,action,3
+update,update,3
+email,email,3
+name,name,3
 valid_user,valid user,3
-profile,profile,3
 merchant_ad,merchant ad,3
 filter_query,filter query,3
 indexing,indexing,3
-validation,validation,3
-system,system,3
-navigation_flow,navigation flow,3
-accommodation_pg_hostel,accommodation pg hostel,3
-nearby_place,nearby place,3
-emergency,emergency,3
-student_discount,student discounts,3
-functionality,functionality,3
-placement,placement,3
-signup_page,signup page,3
-contact_detail,contact detail,3
-distance,distance,3
-image_gallery,image gallery,3
-search,search,3
-visual_consistency,visual consistency,3
-navigation,navigation,3
-smooth_transition,smooth transition,3
-review_submission,review submission,3
-student_review,student reviews,3
-understanding,understanding,3
-user_interaction_pattern,user interaction pattern,3
-guest,guest,3
-price,price,3
-amenity_icon,amenity icon,3
-link,link,3
-light_mode,light mode,3
-dark_mode,dark mode,3
-apartment,apartment,3
-large_visual_section,large visual section,3
-current_slide_position,current slide position,3
-previous_page,previous page,3
-privacy_policy,privacy policy,3
-wifi,wifi,3
-parking,parking,3
-welcome_panel,welcome panel,3
-subtle_shadow,subtle shadow,3
-depth,depth,3
-color_scheme,color scheme,3
-environment,environment,3
-information,information,3
-label,label,3
-top_left,top left,3
-center,center,3
-brief_description,brief description,3
-visibility_toggle,visibility toggle,3
-form_field,form field,3
-logout,logout,3
-mca,mca,2
-university_bangalore_central_campus_guide,university bangalore central campus guide,2
+access,access,3
 21_client_supabase_api,21 client supabase api,2
 22_use,22 use,2
 23_role_base_access,23 role base access,2
@@ -235,16 +88,15 @@ backup_security_consideration,backup security considerations,2
 sql_injection_protection,sql injection protection,2
 auto_generate_rest_api,auto generate rest api,2
 foreign_key_constraint,foreign key constraint,2
-user_authentication,user authentication,2
 caller,caller,2
 postgrest,postgrest,2
 websocket,websocket,2
 polling,polling,2
-team,team,2
 postgresql_database,postgresql database,2
 endpoint,endpoint,2
 public_content,public content,2
 record,record,2
+password,password,2
 phone,phone,2
 constraint_appuserid,constraints appuserid,2
 strict_relationship,strict relationship,2
@@ -257,16 +109,18 @@ placeid,placeid,2
 placesid,placesid,2
 none_constraint,none constraints,2
 comment,comment,2
-registered_user,registered user,2
 rejection_reason,rejection reason,2
 actorappuserid,actorappuserid,2
 placeid_uuid,placeid uuid,2
 fk_placesid,fk placesid,2
+description,description,2
 approvedat,approvedat,2
 updatedat,updatedat,2
 message,message,2
+detail,detail,2
 profilesappuserid,profilesappuserid,2
 profile_record,profile record,2
+profile,profile,2
 nullable_foreign_key,nullable foreign key,2
 delete_set_null,delete set null,2
 adsplaceid,adsplaceid,2
@@ -291,146 +145,4 @@ write_access,write access,2
 audit_log,audit log,2
 layer,layer,2
 ad_table,ad table,2
-light,light,2
 rls_evaluation,rls evaluation,2
-communication,communication,2
-vishwas_vashishtha,vishwas vashishtha,2
-13_ui_design_objective,13 ui design objectives,2
-brand_identity,brand identity,2
-25_theme_support,25 theme support,2
-listing_page,listing pages,2
-37_user_profile,37 user profile,2
-visual,visual,2
-styling_51_color_scheme,styling 51 color scheme,2
-spacing,spacing,2
-layout,layout,2
-visual_layout,visual layout,2
-interaction_pattern,interaction pattern,2
-frontend_development,frontend development,2
-wireframe,wireframe,2
-component_placement,component placement,2
-responsive_design_consideration,responsive design consideration,2
-interface_structure,interface structure,2
-user_flow,user flow,2
-scope,scope,2
-ui_scope,ui scope,2
-search_functionality,search functionality,2
-explore_nearby,explore nearby,2
-feature_highlight,feature highlight,2
-element,element,2
-service_list_page,service list pages,2
-result_counter,result counter,2
-merchant_dashboard,merchant dashboard,2
-review_moderation,review moderation,2
-super_admin_dashboard,super admin dashboard,2
-career_skill_support,career skill support,2
-confusion,confusion,2
-prominent_category_card,prominent category card,2
-large_screen,large screen,2
-user_comfort,user comfort,2
-recommendation,recommendation,2
-typography,typography,2
-reliability,reliability,2
-feature,feature,2
-verified_listing,verified listings,2
-real_time_update,real time update,2
-accuracy,accuracy,2
-trust,trust,2
-evaluation,evaluation,2
-visual_interface,visual interface,2
-safety_resource,safety resource,2
-visual_hierarchy,visual hierarchy,2
-alignment,alignment,2
-structure,structure,2
-merchant_portal,merchant portal,2
-background_image,background image,2
-navigation_link,navigation link,2
-distance_information,distance information,2
-user_account_setting,user account setting,2
-logout_option,logout option,2
-interactive_control,interactive control,2
-sort_option,sort options,2
-service_listing,service listing,2
-user_interface_adapt,user interface adapt,2
-different_screen_size,different screen size,2
-service_category,service category,2
-home_screen,home screen,2
-development_team_credit,development team credit,2
-available_facility,available facility,2
-security,security,2
-location_icon,location icon,2
-proximity,proximity,2
-green_text,green text,2
-eg_89_review,eg 89 review,2
-star_icon,star icon,2
-overall_rating_score,overall rating score,2
-service_type,service type,2
-multi_step_registration_process,multi step registration process,2
-basic_information,basic information,2
-clickable_link,clickable link,2
-interface_component,interface component,2
-essential_information,essential information,2
-cognitive_load,cognitive load,2
-subheading,subheading,2
-layout_structure,layout structure,2
-structured_module_organization,structured module organization,2
-flexible_layout_container,flexible layout container,2
-screen_width,screen width,2
-component_alignment,component alignment,2
-layout_shift,layout shift,2
-navigation_menu,navigation menu,2
-wide_screen,wide screen,2
-visual_element,visual element,2
-aspect_ratio,aspect ratio,2
-distortion,distortion,2
-container,container,2
-horizontal_scrolling,horizontal scrolling,2
-padding,padding,2
-background,background,2
-hover_effect,hover effect,2
-focus_indicator,focus indicator,2
-light_text,light text,2
-eye_strain,eye strain,2
-theme_support,theme support,2
-placeholder_text,placeholder text,2
-central_logo,central logo,2
-platform_purpose,platform purpose,2
-registration_process,registration process,2
-quick_access,quick access,2
-exist_user,exist user,2
-brand_identification,brand identification,2
-purpose,purpose,2
-login_credential,login credential,2
-eye_icon,eye icon,2
-password_field,password field,2
-verification,verification,2
-registration,registration,2
-comfortable_viewing,comfortable viewing,2
-homepage,homepage,2
-home_link,home link,2
-logout_button,logout button,2
-top_right,top right,2
-hide_gem,hide gem,2
-listing,listing,2
-service_name,service name,2
-accommodation_type,accommodation type,2
-property_photo,property photo,2
-property,property,2
-facility,facility,2
-write_review_button,write review button,2
-website,website,2
-theme,theme,2
-access_account_option,access account option,2
-left_panel,left panel,2
-username,username,2
-back,back,2
-dashboard_title_section,dashboard title section,2
-pende_advertisement,pende advertisement,2
-refresh_button,refresh button,2
-administrator,administrator,2
-request_card,request cards,2
-user_profile,user profile,2
-write_review,write review,2
-system_analytics,system analytics,2
-hierarchy,hierarchy,2
-input,input,2

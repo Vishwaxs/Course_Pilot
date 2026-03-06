@@ -57,11 +57,15 @@ def transcribe_audio(audio_path: str, model_name: str = WHISPER_MODEL) -> Dict[s
         )
         return _mock_transcript_stub(audio_path)
 
-    logger.info("Loading Whisper model '%s' …", model_name)
-    model = whisper.load_model(model_name)
+    try:
+        logger.info("Loading Whisper model '%s' …", model_name)
+        model = whisper.load_model(model_name)
 
-    logger.info("Transcribing %s …", audio_path)
-    result = model.transcribe(audio_path)
+        logger.info("Transcribing %s …", audio_path)
+        result = model.transcribe(audio_path)
+    except Exception as exc:
+        logger.error("Whisper transcription failed for %s: %s", audio_path, exc)
+        return _error_transcript_stub(audio_path, str(exc))
 
     segments = []
     for seg in result.get("segments", []):
@@ -99,6 +103,22 @@ def _mock_transcript_stub(audio_path: str) -> Dict[str, Any]:
                 "start_time": 0.0,
                 "end_time": 10.0,
                 "text": "[Mock transcript — Whisper not available. Install openai-whisper.]",
+            }
+        ],
+    }
+
+
+def _error_transcript_stub(audio_path: str, error: str) -> Dict[str, Any]:
+    """Return an error transcript when Whisper fails at runtime (e.g. no ffmpeg)."""
+    return {
+        "lecture_id": Path(audio_path).stem,
+        "course": "UNKNOWN",
+        "duration_seconds": 0,
+        "segments": [
+            {
+                "start_time": 0.0,
+                "end_time": 0.0,
+                "text": f"[Transcription failed: {error}]",
             }
         ],
     }

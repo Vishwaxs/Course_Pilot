@@ -1,12 +1,14 @@
 """
 app.py — CoursePilot: Campus Knowledge Graph & Just-In-Time Tutor.
 
-Streamlit app with 5 tabs:
+Streamlit app with 7 tabs:
+  0. How to Use      — guide for users and evaluation presentation
   1. Upload & Ingest — upload PDFs / audio / past papers
   2. Student Chat    — conversational RAG with follow-up suggestions
   3. Q&A Generator   — auto-generate study questions from documents
-  4. Faculty Dashboard — analytics, concept search, knowledge graph
-  5. Admin Panel      — pipeline controls, data management, env status
+  4. NLP Analytics   — Word Cloud, FreqDist, TF-IDF similarity, VADER sentiment
+  5. Faculty Dashboard — analytics, concept search, knowledge graph
+  6. Admin Panel      — pipeline controls, data management, env status
 """
 
 from __future__ import annotations
@@ -46,6 +48,7 @@ _DEFAULTS = {
     "pipeline_logs": [],
     "messages": [],        # chat history [{role, content, provenance, follow_ups}]
     "generated_qa": [],    # Q&A pairs from generator
+    "query_sentiments": [],  # sentiment scores from VADER for each user query
 }
 for _k, _v in _DEFAULTS.items():
     if _k not in st.session_state:
@@ -98,16 +101,22 @@ def collect_all_documents(log_fn=None) -> list:
             if af.suffix.lower() in (".mp3", ".wav", ".m4a"):
                 if log_fn:
                     log_fn(f"Transcribing {af.name}\u2026")
-                transcript = transcribe_audio(str(af))
-                # Skip mock/empty transcripts (Whisper not installed)
-                segs = transcript.get("segments", [])
-                if segs and any("Mock transcript" in s.get("text", "") for s in segs):
+                try:
+                    transcript = transcribe_audio(str(af))
+                except Exception as exc:
                     if log_fn:
-                        log_fn(
-                            f"\u26a0\ufe0f {af.name}: Whisper not installed \u2014 "
-                            "audio cannot be transcribed. Install with: "
-                            "pip install openai-whisper"
-                        )
+                        log_fn(f"\u26a0\ufe0f {af.name}: transcription error — {exc}")
+                    continue
+                # Skip mock/error transcripts
+                segs = transcript.get("segments", [])
+                if segs and any(
+                    "Mock transcript" in s.get("text", "")
+                    or "Transcription failed" in s.get("text", "")
+                    for s in segs
+                ):
+                    if log_fn:
+                        reason = segs[0].get("text", "unknown error")
+                        log_fn(f"\u26a0\ufe0f {af.name}: skipped — {reason}")
                     continue
                 audio_docs = transcript_to_documents(transcript)
                 docs.extend(audio_docs)
@@ -238,15 +247,123 @@ st.sidebar.caption("Built with Streamlit \u00b7 Gemini \u00b7 FAISS \u00b7 Neo4j
 
 # ─── Tab definitions ─────────────────────────────────────────────────────
 
-tab_upload, tab_chat, tab_qa, tab_faculty, tab_admin = st.tabs(
+tab_guide, tab_upload, tab_chat, tab_qa, tab_nlp, tab_faculty, tab_admin = st.tabs(
     [
+        "\U0001f4d6 How to Use",
         "\U0001f4e4 Upload & Ingest",
         "\U0001f4ac Student Chat",
         "\U0001f4dd Q&A Generator",
+        "\U0001f9e0 NLP Analytics",
         "\U0001f4ca Faculty Dashboard",
         "\u2699\ufe0f Admin",
     ]
 )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TAB 0 — How to Use Guide
+# ═══════════════════════════════════════════════════════════════════════════
+
+with tab_guide:
+    st.header("\U0001f4d6 CoursePilot — How to Use")
+    st.markdown(
+        """
+**CoursePilot** is a Streamlit-based educational tool that combines
+**NLP**, **knowledge graphs**, **vector search**, and **generative AI**
+to help students learn and help faculty analyze course materials.
+
+---
+
+### \U0001f680 Quick-Start (5 Steps)
+
+| Step | Tab | What to Do |
+|------|-----|-----------|
+| **1** | **Upload & Ingest** | Upload your PDF lecture slides → click **Run Ingestion Pipeline** |
+| **2** | **Student Chat** | Ask questions about your materials — AI answers using your documents |
+| **3** | **Q&A Generator** | Auto-generate study questions for exam prep |
+| **4** | **NLP Analytics** | Explore Word Clouds, concept frequencies, document similarity, and sentiment analysis |
+| **5** | **Faculty Dashboard** | View knowledge graph, concept analytics, and course overview |
+
+---
+
+### \U0001f3af What Each Tab Does
+
+**\U0001f4e4 Upload & Ingest**
+- Upload PDF slides, audio recordings, or past question papers
+- The pipeline extracts text (PDFPlumber), builds a **FAISS vector index**
+  (sentence-transformers), extracts **concepts** (spaCy + NLTK lemmatization),
+  and maps **relationships** between them — creating a knowledge graph
+
+**\U0001f4ac Student Chat (RAG)**
+- Type any question about your course → it searches the FAISS index for
+  relevant document chunks → sends them to **Gemini AI** for a grounded answer
+- Every answer includes source references and follow-up suggestions
+- Your query sentiment is tracked (VADER) to show if questions are confused/neutral/confident
+
+**\U0001f4dd Q&A Generator**
+- Generates study questions and answers from your indexed documents
+- Choose question type (Conceptual, Analytical, Short Answer) and quantity
+- Download as a text file for offline revision
+
+**\U0001f9e0 NLP Analytics** *(techniques from NLTK & sklearn labs)*
+- **Word Cloud** — visual overview of the most prominent terms in your materials
+- **Frequency Distribution** — bar chart of most frequent terms (NLTK `FreqDist`)
+- **Document Similarity** — TF-IDF cosine similarity matrix between document pages (sklearn)
+- **Sentiment Analysis** — VADER sentiment analyzer on student chat queries
+
+**\U0001f4ca Faculty Dashboard**
+- Concept frequency table and bar chart
+- Interactive knowledge graph visualization (NetworkX + matplotlib)
+- Course material overview metrics
+
+**\u2699\ufe0f Admin Panel**
+- Rebuild pipeline, import to Neo4j, view logs
+- Clear all data for a new subject
+- Environment status check
+
+---
+
+### \U0001f6e0\ufe0f Technology Stack
+
+| Component | Library | Purpose |
+|-----------|---------|---------|
+| UI Framework | **Streamlit** | Interactive web dashboard |
+| PDF Extraction | **pdfplumber** + **PyMuPDF** | Extract text from lecture PDFs |
+| Audio Transcription | **openai-whisper** | Transcribe lecture recordings |
+| Text Preprocessing | **NLTK** + **spaCy** | Tokenization, lemmatization, stopword removal |
+| Concept Extraction | **spaCy NER** + **NLTK** | Identify and normalize key concepts |
+| Embeddings | **sentence-transformers** (all-MiniLM-L6-v2) | Convert text → 384-dim vectors |
+| Vector Search | **FAISS** | Fast approximate nearest-neighbor retrieval |
+| Knowledge Graph | **NetworkX** / **Neo4j** | Store concept relationships |
+| Generative AI | **Google Gemini** | RAG answers, Q&A generation, follow-ups |
+| NLP Analytics | **WordCloud**, **sklearn TF-IDF**, **NLTK VADER** | Visual analytics & sentiment |
+
+---
+
+### \U0001f3ac Evaluation Presentation Script
+
+> **Step 1:** Open the app → *"This is CoursePilot, a knowledge-graph-powered
+> tutor I built with Streamlit."*
+>
+> **Step 2:** Go to Upload & Ingest → upload a PDF → run the pipeline →
+> *"The pipeline extracts text, builds concepts & relationships, and indexes
+> everything in FAISS for semantic search."*
+>
+> **Step 3:** Open Student Chat → ask a question → *"It uses RAG — retrieves
+> relevant chunks from FAISS, then sends them to Gemini for a grounded answer.
+> Sentiment of each query is tracked using NLTK VADER."*
+>
+> **Step 4:** Open NLP Analytics → *"Here I applied techniques from our NLP labs —
+> Word Cloud visualization, NLTK frequency distributions, TF-IDF cosine similarity
+> between documents, and VADER sentiment analysis on student queries."*
+>
+> **Step 5:** Open Faculty Dashboard → *"Faculty can see the knowledge graph,
+> search concepts, and review analytics."*
+>
+> **Step 6:** Show Admin → *"Admins can rebuild the pipeline, clear data for a
+> new subject, and check environment health."*
+"""
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -576,6 +693,21 @@ with tab_chat:
         _query = _pending_q or _user_input
 
         if _query:
+            # Track query sentiment (VADER)
+            try:
+                from nltk.sentiment import SentimentIntensityAnalyzer as _SIA
+                _sia = _SIA()
+                _sent_scores = _sia.polarity_scores(_query)
+                st.session_state.query_sentiments.append({
+                    "query": _query[:80],
+                    "compound": _sent_scores["compound"],
+                    "pos": _sent_scores["pos"],
+                    "neg": _sent_scores["neg"],
+                    "neu": _sent_scores["neu"],
+                })
+            except Exception:
+                pass
+
             # Show user message
             st.session_state.messages.append({"role": "user", "content": _query})
             with st.chat_message("user"):
@@ -704,7 +836,230 @@ with tab_qa:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# TAB 4 — Faculty Dashboard
+# TAB — NLP Analytics (Word Cloud, FreqDist, Similarity, Sentiment)
+# ═══════════════════════════════════════════════════════════════════════════
+
+with tab_nlp:
+    st.header("\U0001f9e0 NLP Analytics — Applied Techniques")
+    st.caption(
+        "Techniques from NLTK, sklearn, and WordCloud labs, applied to your "
+        "actual course materials."
+    )
+
+    if not _idx_exists(FAISS_INDEX_DIR):
+        st.warning(
+            "\u26a0\ufe0f No documents indexed yet. Upload and ingest materials first."
+        )
+    else:
+        # Load document texts from FAISS metadata
+        _meta_path = Path(FAISS_INDEX_DIR) / "metadata.json"
+        _all_texts: list[str] = []
+        _doc_labels: list[str] = []
+        if _meta_path.exists():
+            _meta = json.loads(_meta_path.read_text(encoding="utf-8"))
+            for _m in _meta:
+                _t = _m.get("text", "")
+                if _t.strip():
+                    _all_texts.append(_t)
+                    _doc_labels.append(
+                        _m.get("metadata", {}).get("filename", "doc") + f" p{_m.get('doc_id', '?')}"
+                    )
+
+        if not _all_texts:
+            st.info("No document text available.")
+        else:
+            import matplotlib.pyplot as plt
+            import numpy as np
+            import re as _re
+
+            # Preprocessing helper
+            from nltk.corpus import stopwords as _sw_corpus
+            try:
+                _stop_words = set(_sw_corpus.words("english"))
+            except LookupError:
+                import nltk as _nltk_dl
+                _nltk_dl.download("stopwords", quiet=True)
+                _stop_words = set(_sw_corpus.words("english"))
+
+            _combined_text = " ".join(_all_texts)
+
+            def _clean_text(text: str) -> str:
+                text = text.lower()
+                text = _re.sub(r"[^a-z\s]", "", text)
+                text = _re.sub(r"\s+", " ", text).strip()
+                return " ".join(w for w in text.split() if w not in _stop_words and len(w) > 2)
+
+            _cleaned_combined = _clean_text(_combined_text)
+
+            # ── Section 1: Word Cloud ──────────────────────────────────
+            st.subheader("\u2601\ufe0f Word Cloud of Course Materials")
+            st.caption("Visual representation of the most prominent terms (WordCloud library, from NLTK lab).")
+
+            try:
+                from wordcloud import WordCloud as _WC
+
+                _wc = _WC(
+                    width=1000,
+                    height=400,
+                    background_color="white",
+                    max_words=150,
+                    colormap="viridis",
+                    collocations=False,
+                ).generate(_cleaned_combined)
+
+                _fig_wc, _ax_wc = plt.subplots(figsize=(12, 5))
+                _ax_wc.imshow(_wc, interpolation="bilinear")
+                _ax_wc.axis("off")
+                _ax_wc.set_title("Word Cloud — Key Terms from Course Materials", fontsize=13)
+                st.pyplot(_fig_wc)
+                plt.close(_fig_wc)
+            except ImportError:
+                st.info("Install `wordcloud` package: `pip install wordcloud`")
+
+            st.markdown("---")
+
+            # ── Section 2: Frequency Distribution ──────────────────────
+            st.subheader("\U0001f4ca Frequency Distribution (NLTK FreqDist)")
+            st.caption("Top N most frequent terms after stopword removal and cleaning.")
+
+            import nltk as _nltk_fd
+            _words_list = _nltk_fd.tokenize.word_tokenize(_cleaned_combined)
+            _fd = _nltk_fd.FreqDist(_words_list)
+
+            _top_n_fd = st.slider("Number of terms", 10, 40, 20, key="nlp_fd_n")
+            _top_words = _fd.most_common(_top_n_fd)
+            _labels_fd, _counts_fd = zip(*_top_words) if _top_words else ([], [])
+
+            _fig_fd, _ax_fd = plt.subplots(figsize=(12, 4))
+            _ax_fd.bar(range(len(_labels_fd)), _counts_fd, color="#6366f1", edgecolor="white")
+            _ax_fd.set_xticks(range(len(_labels_fd)))
+            _ax_fd.set_xticklabels(_labels_fd, rotation=45, ha="right", fontsize=8)
+            _ax_fd.set_ylabel("Frequency")
+            _ax_fd.set_title(f"Top {_top_n_fd} Terms — Frequency Distribution")
+            plt.tight_layout()
+            st.pyplot(_fig_fd)
+            plt.close(_fig_fd)
+
+            st.markdown("---")
+
+            # ── Section 3: TF-IDF Document Similarity ──────────────────
+            st.subheader("\U0001f50d Document Similarity (TF-IDF + Cosine)")
+            st.caption(
+                "Compute TF-IDF vectors for each page, then measure cosine similarity "
+                "between documents (sklearn, from NLTK/NLP lab)."
+            )
+
+            from sklearn.feature_extraction.text import TfidfVectorizer as _TfidfV
+            from sklearn.metrics.pairwise import cosine_similarity as _cos_sim
+
+            # Limit to first N docs for performance
+            _max_sim_docs = min(30, len(_all_texts))
+            _sim_texts = _all_texts[:_max_sim_docs]
+
+            _tfidf = _TfidfV(max_features=500, stop_words="english")
+            _tfidf_matrix = _tfidf.fit_transform(_sim_texts)
+            _sim_matrix = _cos_sim(_tfidf_matrix)
+
+            _fig_sim, _ax_sim = plt.subplots(figsize=(10, 8))
+            _im = _ax_sim.imshow(_sim_matrix, cmap="YlOrRd", aspect="auto")
+            _ax_sim.set_title(f"Cosine Similarity Matrix ({_max_sim_docs} documents)")
+            _ax_sim.set_xlabel("Document Index")
+            _ax_sim.set_ylabel("Document Index")
+            _fig_sim.colorbar(_im, ax=_ax_sim, label="Similarity")
+            st.pyplot(_fig_sim)
+            plt.close(_fig_sim)
+
+            # Show most similar pair
+            _np = np.array(_sim_matrix)
+            np.fill_diagonal(_np, 0)
+            _max_idx = np.unravel_index(_np.argmax(), _np.shape)
+            st.info(
+                f"**Most similar pair:** Document {_max_idx[0]+1} & "
+                f"Document {_max_idx[1]+1} — "
+                f"similarity = {_np[_max_idx]:.3f}"
+            )
+
+            st.markdown("---")
+
+            # ── Section 4: Sentiment Analysis of Student Queries ──────
+            st.subheader("\U0001f4ac Sentiment Analysis (NLTK VADER)")
+            st.caption(
+                "VADER sentiment scores for student queries in the chat. "
+                "Tracks whether questions are confident, neutral, or confused."
+            )
+
+            _sentiments = st.session_state.get("query_sentiments", [])
+            if not _sentiments:
+                st.info(
+                    "No student queries yet. Go to the **Student Chat** tab, "
+                    "ask some questions, and return here to see sentiment analysis."
+                )
+            else:
+                import pandas as _pd_sent
+
+                _df_sent = _pd_sent.DataFrame(_sentiments)
+
+                # Sentiment distribution
+                def _classify_sent(compound):
+                    if compound >= 0.05:
+                        return "Positive"
+                    elif compound <= -0.05:
+                        return "Negative"
+                    return "Neutral"
+
+                _df_sent["sentiment"] = _df_sent["compound"].apply(_classify_sent)
+
+                _sc1, _sc2 = st.columns([1, 2])
+
+                with _sc1:
+                    _dist = _df_sent["sentiment"].value_counts()
+                    _colors = {"Positive": "#22c55e", "Neutral": "#6366f1", "Negative": "#ef4444"}
+                    _fig_sp, _ax_sp = plt.subplots(figsize=(4, 4))
+                    _ax_sp.bar(
+                        _dist.index,
+                        _dist.values,
+                        color=[_colors.get(s, "#999") for s in _dist.index],
+                    )
+                    _ax_sp.set_title("Query Sentiment Distribution")
+                    _ax_sp.set_ylabel("Count")
+                    plt.tight_layout()
+                    st.pyplot(_fig_sp)
+                    plt.close(_fig_sp)
+
+                with _sc2:
+                    st.markdown("**Query History with Sentiment Scores:**")
+                    _display_sent = _df_sent[["query", "compound", "sentiment"]].copy()
+                    _display_sent.columns = ["Query", "Score", "Sentiment"]
+                    st.dataframe(_display_sent, hide_index=True, height=300)
+
+                # Compound score over time
+                if len(_sentiments) > 1:
+                    _fig_ts, _ax_ts = plt.subplots(figsize=(10, 3))
+                    _ax_ts.plot(
+                        range(1, len(_sentiments) + 1),
+                        _df_sent["compound"],
+                        marker="o",
+                        color="#6366f1",
+                        linewidth=2,
+                    )
+                    _ax_ts.axhline(y=0, color="gray", linestyle="--", alpha=0.5)
+                    _ax_ts.fill_between(
+                        range(1, len(_sentiments) + 1),
+                        _df_sent["compound"],
+                        alpha=0.15,
+                        color="#6366f1",
+                    )
+                    _ax_ts.set_xlabel("Query Number")
+                    _ax_ts.set_ylabel("Compound Score")
+                    _ax_ts.set_title("Sentiment Trend Across Queries")
+                    _ax_ts.set_ylim(-1.1, 1.1)
+                    plt.tight_layout()
+                    st.pyplot(_fig_ts)
+                    plt.close(_fig_ts)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TAB — Faculty Dashboard
 # ═══════════════════════════════════════════════════════════════════════════
 
 with tab_faculty:
@@ -1027,6 +1382,7 @@ with tab_admin:
             st.session_state.pipeline_logs = []
             st.session_state.messages = []
             st.session_state.generated_qa = []
+            st.session_state.query_sentiments = []
 
             log_pipeline("Admin: All data cleared for new subject.")
             st.success(
