@@ -402,14 +402,14 @@ def extract_relations(
 
 
 # ---------------------------------------------------------------------------
-# CSV export (for Neo4j import)
+# CSV export
 # ---------------------------------------------------------------------------
 
 def save_concepts_csv(
     concepts: List[Dict[str, Any]],
     output_path: str = "data/concepts.csv",
 ) -> None:
-    """Write concepts to CSV for Neo4j LOAD CSV.
+    """Write concepts to CSV.
 
     Args:
         concepts: List of concept dicts.
@@ -432,7 +432,7 @@ def save_edges_csv(
     edges: List[Dict[str, Any]],
     output_path: str = "data/edges.csv",
 ) -> None:
-    """Write edges to CSV for Neo4j LOAD CSV.
+    """Write edges to CSV.
 
     Args:
         edges: List of edge dicts.
@@ -457,17 +457,18 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(description="Extract concepts and relations")
-    parser.add_argument("--data-dir", default="data/sample",
-                        help="Directory with sample JSON data")
     parser.add_argument("--output-dir", default="data/",
                         help="Output directory for CSVs")
     args = parser.parse_args()
 
-    from backend.ingest_pdf import build_all_sample_documents
-    docs = build_all_sample_documents(args.data_dir)
+    # Provide sample documents for standalone testing
+    sample_docs = [
+        {"doc_id": "sample_1", "text": "Machine learning is a subset of artificial intelligence. Neural networks are used in deep learning.", "source_type": "slide"},
+        {"doc_id": "sample_2", "text": "Natural language processing involves tokenization and parsing. NLP is used for text analysis.", "source_type": "slide"},
+    ]
 
-    concepts, concept_docs = extract_concepts_from_documents(docs)
-    edges = extract_relations(docs, concepts, concept_docs)
+    concepts, concept_docs = extract_concepts_from_documents(sample_docs)
+    edges = extract_relations(sample_docs, concepts, concept_docs)
 
     save_concepts_csv(concepts, os.path.join(args.output_dir, "concepts.csv"))
     save_edges_csv(edges, os.path.join(args.output_dir, "edges.csv"))

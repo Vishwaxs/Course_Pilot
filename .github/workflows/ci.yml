@@ -1,9 +1,4 @@
-
-# What to change:
-#   1. Add secrets (OPENAI_API_KEY, etc.) in GitHub repo Settings → Secrets.
-#   2. Adjust Python version if needed.
-
-name: CI — CKG-JTT CoursePilot
+name: CI — CoursePilot
 
 on:
   push:
@@ -44,16 +39,6 @@ jobs:
           pip install ruff
           ruff check . --select E,W,F --ignore E501
 
-      - name: Lint with flake8
-        run: |
-          pip install flake8
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-line-length=120 --statistics
-
       - name: Run tests
         run: |
           pytest tests/ -v --tb=short
-        env:
-          DATA_DIR: data/sample
-          GRAPH_BACKEND: networkx
-          LLM_PROVIDER: local

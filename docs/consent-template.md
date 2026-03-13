@@ -1,14 +1,13 @@
-<!-- :   -->
-# 📝 Faculty Consent Template — CoursePilot
+# Faculty Consent Template — CoursePilot
 
 > Use this template to obtain written consent from faculty members before
-> ingesting their lecture materials into the CoursePilot system.
+> processing their lecture materials with CoursePilot.
 
 ---
 
 ## Faculty Material Usage Consent Form
 
-### Project: CKG-JTT — Campus Knowledge Graph & Just-In-Time Tutor (CoursePilot)
+### Project: CoursePilot — Document Analytics & Visualization Dashboard
 ### Institution: Christ University
 
 ---
@@ -26,32 +25,28 @@
 ### Purpose
 
 CoursePilot is an educational technology prototype that:
-1. Extracts concepts from lecture slides and audio recordings.
-2. Builds a searchable knowledge graph of course topics.
-3. Provides AI-assisted question answering for students.
-4. Helps faculty identify syllabus coverage gaps.
+1. Extracts text and images from lecture slide PDFs.
+2. Performs NLP analysis (tokenization, NER, concept extraction).
+3. Generates visualizations: word clouds, frequency charts, similarity heatmaps.
+4. Builds a knowledge graph of course concepts.
 
 ### Data That Will Be Processed
 
 - [ ] Lecture slide PDFs
-- [ ] Lecture audio recordings
 - [ ] Lecture notes / supplementary materials
-- [ ] Past examination question papers
 
 ### How Data Will Be Used
 
-1. **Text extraction**: Content will be converted to plain text for indexing.
+1. **Text extraction**: Content will be converted to plain text for analysis.
 2. **Concept extraction**: Key topics and relationships will be identified using NLP.
-3. **Embedding & search**: Content will be encoded as vectors for semantic search.
-4. **Student queries**: Students will receive AI-generated answers sourced from your materials, with full attribution.
+3. **Visualization**: Word clouds, frequency distributions, and concept graphs will be generated.
+4. **Image processing**: Embedded images will be extracted and processed for demonstration.
 
 ### Data Protection Measures
 
-- Materials are stored on secured university servers only.
-- Student-facing responses always include source attribution (slide/lecture ID).
-- No personally identifiable student data is linked to faculty materials.
+- Materials are processed locally only.
+- No data is sent to external APIs or cloud services.
 - Materials can be removed at any time upon faculty request.
-- The system does not share materials outside the university LMS.
 
 ### Consent
 
@@ -59,9 +54,8 @@ I, the undersigned faculty member, **consent / do not consent** (circle one) to 
 
 I understand that:
 - I may withdraw consent at any time by notifying the project coordinator.
-- Upon withdrawal, my materials will be removed from the system within 48 hours.
+- Upon withdrawal, my materials will be removed from the system.
 - My materials will only be used for the stated educational purposes.
-- Attribution will always be provided to students.
 
 ---
 

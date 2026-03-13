@@ -1,179 +1,156 @@
 """
-app.py — CoursePilot: Campus Knowledge Graph & Just-In-Time Tutor.
+app.py - CoursePilot: Course Material Analyzer & Visualizer
 
 Streamlit app with 7 tabs:
-  0. How to Use      — guide for users and evaluation presentation
-  1. Upload & Ingest — upload PDFs / audio / past papers
-  2. Student Chat    — conversational RAG with follow-up suggestions
-  3. Q&A Generator   — auto-generate study questions from documents
-  4. NLP Analytics   — Word Cloud, FreqDist, TF-IDF similarity, VADER sentiment
-  5. Faculty Dashboard — analytics, concept search, knowledge graph
-  6. Admin Panel      — pipeline controls, data management, env status
+  0. How to Use        - guide for users and evaluation presentation
+  1. Upload & Process  - upload PDFs, extract text & images, run concept extraction
+  2. Text Processing   - tokenization, POS tagging, NER, lemmatization (spaCy + NLTK)
+  3. Word Cloud & Freq - word cloud visualization + NLTK FreqDist
+  4. Document Analytics - TF-IDF similarity, VADER sentiment, N-gram analysis
+  5. Image Processing  - extract images from PDFs, OpenCV transformations
+  6. Knowledge Graph   - concept network visualization with NetworkX
 """
 
 from __future__ import annotations
 
-import json
+import io
 import logging
-import os
+import re
 import sys
-import time
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import streamlit as st
-from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT))
-os.chdir(PROJECT_ROOT)          # ensure CWD = project root for all relative paths
-load_dotenv()
 
-# ─── Page config ──────────────────────────────────────────────────────────
+# --- Page config ---
 
 st.set_page_config(
-    page_title="CoursePilot — CKG-JTT",
+    page_title="CoursePilot - Course Material Analyzer",
     page_icon="\U0001f393",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ─── Logging ──────────────────────────────────────────────────────────────
+# --- Logging ---
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("app")
 
-# ─── Session-state defaults ──────────────────────────────────────────────
+
+# --- NLTK data helper ---
+
+def ensure_nltk_data():
+    """Download required NLTK data packages if missing."""
+    import nltk
+    resources = {
+        "tokenizers/punkt_tab": "punkt_tab",
+        "corpora/stopwords": "stopwords",
+        "sentiment/vader_lexicon": "vader_lexicon",
+        "corpora/wordnet": "wordnet",
+    }
+    for path, name in resources.items():
+        try:
+            nltk.data.find(path)
+        except LookupError:
+            nltk.download(name, quiet=True)
+
+
+# --- Session-state defaults ---
 
 _DEFAULTS = {
-    "pipeline_logs": [],
-    "messages": [],        # chat history [{role, content, provenance, follow_ups}]
-    "generated_qa": [],    # Q&A pairs from generator
-    "query_sentiments": [],  # sentiment scores from VADER for each user query
+    "page_texts": [],
+    "pdf_images": [],
+    "concepts": [],
+    "edges": [],
+    "processed": False,
 }
 for _k, _v in _DEFAULTS.items():
     if _k not in st.session_state:
         st.session_state[_k] = _v
 
 
-def log_pipeline(msg: str) -> None:
-    entry = f"[{time.strftime('%H:%M:%S')}] {msg}"
-    st.session_state.pipeline_logs.append(entry)
-    logger.info(msg)
+# --- Helper: Extract text from PDFs ---
+
+def extract_text_from_pdfs(files):
+    """Extract text page-by-page from uploaded PDF files using pdfplumber."""
+    import pdfplumber
+    pages = []
+    for f in files:
+        f.seek(0)
+        with pdfplumber.open(f) as pdf:
+            for i, page in enumerate(pdf.pages):
+                text = page.extract_text() or ""
+                if text.strip():
+                    pages.append({"filename": f.name, "page": i + 1, "text": text.strip()})
+    return pages
 
 
-# ─── Constants ────────────────────────────────────────────────────────────
+# --- Helper: Extract images from PDFs ---
 
-FAISS_INDEX_DIR: str = os.getenv(
-    "FAISS_INDEX_DIR", str(PROJECT_ROOT / "data" / "faiss_index")
-)
-
-# ─── Reusable pipeline helpers ────────────────────────────────────────────
-
-
-def collect_all_documents(log_fn=None) -> list:
-    """Scan all uploaded files and return canonical docs."""
-    from backend.ingest_pdf import ingest_pdf_folder
-
-    docs: list = []
-
-    # Slide PDFs
-    uploads_path = PROJECT_ROOT / "data" / "uploads"
-    if uploads_path.exists() and list(uploads_path.glob("*.pdf")):
-        pdf_docs = ingest_pdf_folder(str(uploads_path), source_type="slide")
-        docs.extend(pdf_docs)
-        if log_fn:
-            log_fn(f"Slides: {len(pdf_docs)} pages from uploaded PDFs.")
-
-    # Past paper PDFs
-    papers_path = PROJECT_ROOT / "data" / "uploads" / "papers"
-    if papers_path.exists() and list(papers_path.glob("*.pdf")):
-        paper_docs = ingest_pdf_folder(str(papers_path), source_type="past_paper")
-        docs.extend(paper_docs)
-        if log_fn:
-            log_fn(f"Past papers: {len(paper_docs)} pages.")
-
-    # Audio transcripts
-    audio_dir = PROJECT_ROOT / "data" / "uploads" / "audio"
-    if audio_dir.exists():
-        from backend.ingest_audio import transcribe_audio, transcript_to_documents
-
-        for af in sorted(audio_dir.iterdir()):
-            if af.suffix.lower() in (".mp3", ".wav", ".m4a"):
-                if log_fn:
-                    log_fn(f"Transcribing {af.name}\u2026")
+def extract_images_from_pdfs(files):
+    """Extract images from uploaded PDF files using PyMuPDF."""
+    try:
+        import fitz
+    except ImportError:
+        return []
+    images = []
+    for f in files:
+        f.seek(0)
+        doc = fitz.open(stream=f.read(), filetype="pdf")
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+            img_list = page.get_images(full=True)
+            for img_idx, img in enumerate(img_list):
+                xref = img[0]
                 try:
-                    transcript = transcribe_audio(str(af))
-                except Exception as exc:
-                    if log_fn:
-                        log_fn(f"\u26a0\ufe0f {af.name}: transcription error — {exc}")
+                    pix = fitz.Pixmap(doc, xref)
+                    if pix.n >= 5:
+                        pix = fitz.Pixmap(fitz.csRGB, pix)
+                    if pix.width < 50 or pix.height < 50:
+                        continue
+                    img_bytes = pix.tobytes("png")
+                    images.append({
+                        "filename": f.name, "page": page_num + 1,
+                        "img_idx": img_idx, "image_bytes": img_bytes,
+                        "width": pix.width, "height": pix.height,
+                    })
+                except Exception:
                     continue
-                # Skip mock/error transcripts
-                segs = transcript.get("segments", [])
-                if segs and any(
-                    "Mock transcript" in s.get("text", "")
-                    or "Transcription failed" in s.get("text", "")
-                    for s in segs
-                ):
-                    if log_fn:
-                        reason = segs[0].get("text", "unknown error")
-                        log_fn(f"\u26a0\ufe0f {af.name}: skipped — {reason}")
-                    continue
-                audio_docs = transcript_to_documents(transcript)
-                docs.extend(audio_docs)
-                if log_fn:
-                    log_fn(f"Audio: {af.name} \u2192 {len(audio_docs)} segments.")
-
-    return docs
+        doc.close()
+        f.seek(0)
+    return images
 
 
-def rebuild_pipeline(docs: list, log_fn=None) -> tuple:
-    """Rebuild concepts, edges, FAISS index, and graph cache.
+# --- Helper: Text cleaning ---
 
-    Returns (n_concepts, n_edges, n_vectors).
-    """
-    from backend.embeddings import embed_texts
-    from backend.extract_concepts import (
-        extract_concepts_from_documents,
-        extract_relations,
-        save_concepts_csv,
-        save_edges_csv,
-    )
-    from backend.faiss_index import build_index
-    from backend.neo4j_import import reset_graph_cache
-
-    # Concepts & edges
-    concepts, concept_docs = extract_concepts_from_documents(docs)
-    edges = extract_relations(docs, concepts, concept_docs)
-    save_concepts_csv(concepts, str(PROJECT_ROOT / "data" / "concepts.csv"))
-    save_edges_csv(edges, str(PROJECT_ROOT / "data" / "edges.csv"))
-    if log_fn:
-        log_fn(f"Concepts: {len(concepts)}, Edges: {len(edges)}")
-
-    # FAISS index
-    texts = [d["text"] for d in docs]
-    if log_fn:
-        log_fn("Computing embeddings\u2026")
-    embeddings = embed_texts(texts)
-    metadata = [
-        {
-            "doc_id": d["doc_id"],
-            "source_type": d["source_type"],
-            "text": d["text"],
-            "metadata": d.get("metadata", {}),
-        }
-        for d in docs
-    ]
-    build_index(embeddings, metadata, FAISS_INDEX_DIR)
-    if log_fn:
-        log_fn(f"FAISS index: {len(docs)} vectors.")
-
-    # Graph cache
-    reset_graph_cache()
-
-    return len(concepts), len(edges), len(docs)
+def clean_text(text):
+    """Clean text for NLP analysis."""
+    text = text.lower()
+    text = re.sub(r"[^a-z\s]", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
 
 
-# ─── Custom CSS ───────────────────────────────────────────────────────────
+def get_stopwords():
+    """Get NLTK English stopwords."""
+    try:
+        from nltk.corpus import stopwords
+        return set(stopwords.words("english"))
+    except Exception:
+        return set()
+
+
+def remove_stopwords(text, stop_words):
+    """Remove stopwords and short words from cleaned text."""
+    return " ".join(w for w in text.split() if w not in stop_words and len(w) > 2)
+
+
+# --- Custom CSS ---
 
 st.markdown(
     """<style>
@@ -190,136 +167,111 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ─── Sidebar ─────────────────────────────────────────────────────────────
+
+# --- Sidebar ---
 
 st.sidebar.markdown(
     '<div class="hero-banner">'
-    "<h3>\U0001f393 CoursePilot</h3>"
-    "<p>Campus Knowledge Graph &amp; Just-In-Time Tutor</p>"
-    "</div>",
+    '<h3>\U0001f393 CoursePilot</h3>'
+    '<p>Course Material Analyzer &amp; Visualizer</p>'
+    '</div>',
     unsafe_allow_html=True,
 )
 
-role = st.sidebar.selectbox(
-    "\U0001f464 Select Role",
-    ["student", "faculty", "admin"],
-    index=0,
-    help="Switch between student, faculty, and admin views.",
-)
-
-_USER_MAP = {
-    "student": ("Alice Student", "alice@christuniversity.in"),
-    "faculty": ("Dr. Ramesh Kumar", "ramesh.k@christuniversity.in"),
-    "admin": ("Admin User", "admin@christuniversity.in"),
-}
-_uname, _uemail = _USER_MAP[role]
-st.sidebar.markdown(f"**{_uname}**  \n`{_uemail}`")
-st.sidebar.markdown("---")
-
-# Sidebar quick stats
-from backend.faiss_index import index_exists as _idx_exists  # noqa: E402
-
-_CONCEPTS_CSV = PROJECT_ROOT / "data" / "concepts.csv"
-_EDGES_CSV = PROJECT_ROOT / "data" / "edges.csv"
-
-_n_docs = 0
-_n_concepts = 0
-_n_edges = 0
-try:
-    if _idx_exists(FAISS_INDEX_DIR):
-        _mp = Path(FAISS_INDEX_DIR) / "metadata.json"
-        if _mp.exists():
-            _n_docs = len(json.loads(_mp.read_text(encoding="utf-8")))
-    if _CONCEPTS_CSV.exists():
-        _n_concepts = sum(1 for _ in open(_CONCEPTS_CSV, encoding="utf-8")) - 1
-    if _EDGES_CSV.exists():
-        _n_edges = sum(1 for _ in open(_EDGES_CSV, encoding="utf-8")) - 1
-except Exception:
-    pass
-
-_sc1, _sc2, _sc3 = st.sidebar.columns(3)
-_sc1.metric("\U0001f4c4 Pages", _n_docs)
-_sc2.metric("\U0001f4a1 Concepts", _n_concepts)
-_sc3.metric("\U0001f517 Relations", _n_edges)
+if st.session_state.processed:
+    st.sidebar.markdown("### \U0001f4ca Dashboard Stats")
+    _sc1, _sc2 = st.sidebar.columns(2)
+    _sc1.metric("\U0001f4c4 Pages", len(st.session_state.page_texts))
+    _sc2.metric("\U0001f4a1 Concepts", len(st.session_state.concepts))
+    _sc3, _sc4 = st.sidebar.columns(2)
+    _sc3.metric("\U0001f517 Relations", len(st.session_state.edges))
+    _sc4.metric("\U0001f5bc\ufe0f Images", len(st.session_state.pdf_images))
+    _n_files = len(set(p["filename"] for p in st.session_state.page_texts))
+    st.sidebar.metric("\U0001f4c1 PDF Files", _n_files)
+else:
+    st.sidebar.info("\U0001f4e4 Upload PDFs in the **Upload & Process** tab to begin.")
 
 st.sidebar.markdown("---")
-st.sidebar.caption("Built with Streamlit \u00b7 Gemini \u00b7 FAISS \u00b7 Neo4j")
-
-# ─── Tab definitions ─────────────────────────────────────────────────────
-
-tab_guide, tab_upload, tab_chat, tab_qa, tab_nlp, tab_faculty, tab_admin = st.tabs(
-    [
-        "\U0001f4d6 How to Use",
-        "\U0001f4e4 Upload & Ingest",
-        "\U0001f4ac Student Chat",
-        "\U0001f4dd Q&A Generator",
-        "\U0001f9e0 NLP Analytics",
-        "\U0001f4ca Faculty Dashboard",
-        "\u2699\ufe0f Admin",
-    ]
-)
+st.sidebar.caption("Built with Streamlit \u00b7 spaCy \u00b7 NLTK \u00b7 OpenCV \u00b7 NetworkX")
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# TAB 0 — How to Use Guide
-# ═══════════════════════════════════════════════════════════════════════════
+# --- Tab definitions ---
+
+tab_guide, tab_upload, tab_text, tab_wc, tab_analytics, tab_img, tab_kg = st.tabs([
+    "\U0001f4d6 How to Use",
+    "\U0001f4e4 Upload & Process",
+    "\U0001f4dd Text Processing",
+    "\u2601\ufe0f Word Cloud & Frequency",
+    "\U0001f4ca Document Analytics",
+    "\U0001f5bc\ufe0f Image Processing",
+    "\U0001f578\ufe0f Knowledge Graph",
+])
+
+
+# =====================================================================
+# TAB 0 - How to Use Guide
+# =====================================================================
 
 with tab_guide:
-    st.header("\U0001f4d6 CoursePilot — How to Use")
+    st.header("\U0001f4d6 CoursePilot - How to Use")
     st.markdown(
         """
-**CoursePilot** is a Streamlit-based educational tool that combines
-**NLP**, **knowledge graphs**, **vector search**, and **generative AI**
-to help students learn and help faculty analyze course materials.
+**CoursePilot** is a Streamlit-based course material analyzer that applies
+**NLP**, **text processing**, **image processing**, and **knowledge graphs**
+to help explore and visualize educational content.
 
 ---
 
-### \U0001f680 Quick-Start (5 Steps)
+### \U0001f680 Quick-Start
 
 | Step | Tab | What to Do |
 |------|-----|-----------|
-| **1** | **Upload & Ingest** | Upload your PDF lecture slides → click **Run Ingestion Pipeline** |
-| **2** | **Student Chat** | Ask questions about your materials — AI answers using your documents |
-| **3** | **Q&A Generator** | Auto-generate study questions for exam prep |
-| **4** | **NLP Analytics** | Explore Word Clouds, concept frequencies, document similarity, and sentiment analysis |
-| **5** | **Faculty Dashboard** | View knowledge graph, concept analytics, and course overview |
+| **1** | **Upload & Process** | Upload PDF lecture slides \u2192 click **Process Materials** |
+| **2** | **Text Processing** | Explore tokenization, POS tagging, Named Entity Recognition |
+| **3** | **Word Cloud & Frequency** | Visualize prominent terms and frequency distributions |
+| **4** | **Document Analytics** | TF-IDF similarity, VADER sentiment, N-gram analysis |
+| **5** | **Image Processing** | Extract images from PDFs and apply OpenCV transformations |
+| **6** | **Knowledge Graph** | Visualize concept relationships with NetworkX |
 
 ---
 
 ### \U0001f3af What Each Tab Does
 
-**\U0001f4e4 Upload & Ingest**
-- Upload PDF slides, audio recordings, or past question papers
-- The pipeline extracts text (PDFPlumber), builds a **FAISS vector index**
-  (sentence-transformers), extracts **concepts** (spaCy + NLTK lemmatization),
-  and maps **relationships** between them — creating a knowledge graph
+**\U0001f4e4 Upload & Process**
+- Upload PDF lecture slides or past question papers
+- The pipeline extracts text page-by-page (pdfplumber), extracts embedded
+  images (PyMuPDF), identifies **concepts** (spaCy noun-chunk extraction +
+  lemmatization), and builds **co-occurrence relationships** between concepts
 
-**\U0001f4ac Student Chat (RAG)**
-- Type any question about your course → it searches the FAISS index for
-  relevant document chunks → sends them to **Gemini AI** for a grounded answer
-- Every answer includes source references and follow-up suggestions
-- Your query sentiment is tracked (VADER) to show if questions are confused/neutral/confident
+**\U0001f4dd Text Processing** *(NLTK + spaCy techniques)*
+- **Tokenization** \u2014 word and sentence tokenization (NLTK)
+- **POS Tagging** \u2014 Part-of-Speech tagging table (spaCy)
+- **Named Entity Recognition** \u2014 identify people, organizations, dates, etc. (spaCy)
+- **Lemmatization** \u2014 compare original tokens vs. lemmatized forms
+- **POS Distribution** \u2014 bar chart of POS tag frequencies
 
-**\U0001f4dd Q&A Generator**
-- Generates study questions and answers from your indexed documents
-- Choose question type (Conceptual, Analytical, Short Answer) and quantity
-- Download as a text file for offline revision
+**\u2601\ufe0f Word Cloud & Frequency** *(WordCloud + NLTK)*
+- **Word Cloud** \u2014 visual overview of the most prominent terms (customizable)
+- **Frequency Distribution** \u2014 bar chart of top-N terms (NLTK `FreqDist`)
+- Vocabulary statistics (total words, unique words, lexical diversity)
 
-**\U0001f9e0 NLP Analytics** *(techniques from NLTK & sklearn labs)*
-- **Word Cloud** — visual overview of the most prominent terms in your materials
-- **Frequency Distribution** — bar chart of most frequent terms (NLTK `FreqDist`)
-- **Document Similarity** — TF-IDF cosine similarity matrix between document pages (sklearn)
-- **Sentiment Analysis** — VADER sentiment analyzer on student chat queries
+**\U0001f4ca Document Analytics** *(sklearn + NLTK)*
+- **TF-IDF Cosine Similarity** \u2014 heatmap showing how similar document pages are (sklearn)
+- **VADER Sentiment Analysis** \u2014 compound sentiment score per page (NLTK)
+- **N-gram Analysis** \u2014 most common bigrams and trigrams
 
-**\U0001f4ca Faculty Dashboard**
-- Concept frequency table and bar chart
-- Interactive knowledge graph visualization (NetworkX + matplotlib)
-- Course material overview metrics
+**\U0001f5bc\ufe0f Image Processing** *(OpenCV + PyMuPDF)*
+- Extract images embedded in PDF lecture slides
+- Apply OpenCV transformations: **grayscale**, **Gaussian blur**, **Canny edge detection**, **binary thresholding**
+- **Image histograms** (grayscale + RGB channels)
+- **Histogram equalization** comparison
+- Upload custom images for processing if PDFs have no images
 
-**\u2699\ufe0f Admin Panel**
-- Rebuild pipeline, import to Neo4j, view logs
-- Clear all data for a new subject
-- Environment status check
+**\U0001f578\ufe0f Knowledge Graph** *(spaCy + NetworkX)*
+- Concept extraction using spaCy NLP (noun chunks + lemmatization)
+- Co-occurrence relationship mapping between concepts
+- Interactive NetworkX graph visualization with matplotlib
+- Concept frequency analytics and search
 
 ---
 
@@ -328,1131 +280,780 @@ to help students learn and help faculty analyze course materials.
 | Component | Library | Purpose |
 |-----------|---------|---------|
 | UI Framework | **Streamlit** | Interactive web dashboard |
-| PDF Extraction | **pdfplumber** + **PyMuPDF** | Extract text from lecture PDFs |
-| Audio Transcription | **openai-whisper** | Transcribe lecture recordings |
-| Text Preprocessing | **NLTK** + **spaCy** | Tokenization, lemmatization, stopword removal |
-| Concept Extraction | **spaCy NER** + **NLTK** | Identify and normalize key concepts |
-| Embeddings | **sentence-transformers** (all-MiniLM-L6-v2) | Convert text → 384-dim vectors |
-| Vector Search | **FAISS** | Fast approximate nearest-neighbor retrieval |
-| Knowledge Graph | **NetworkX** / **Neo4j** | Store concept relationships |
-| Generative AI | **Google Gemini** | RAG answers, Q&A generation, follow-ups |
-| NLP Analytics | **WordCloud**, **sklearn TF-IDF**, **NLTK VADER** | Visual analytics & sentiment |
+| PDF Text Extraction | **pdfplumber** | Extract text from lecture PDFs |
+| PDF Image Extraction | **PyMuPDF** | Extract embedded images |
+| NLP Processing | **spaCy** (`en_core_web_sm`) + **NLTK** | Tokenization, POS, NER, lemmatization |
+| Word Cloud | **WordCloud** | Visual term prominence |
+| Text Analytics | **sklearn** (TF-IDF + cosine similarity) | Document similarity |
+| Sentiment | **NLTK VADER** | Sentiment analysis |
+| Image Processing | **OpenCV** | Image transformations & histograms |
+| Knowledge Graph | **NetworkX** + **matplotlib** | Concept relationship visualization |
+| Data Handling | **pandas** + **numpy** | DataFrames and numerical computation |
 
 ---
 
 ### \U0001f3ac Evaluation Presentation Script
 
-> **Step 1:** Open the app → *"This is CoursePilot, a knowledge-graph-powered
-> tutor I built with Streamlit."*
+> **Step 1:** Open Upload & Process tab \u2192 upload a PDF \u2192 click Process Materials \u2192
+> *"The pipeline extracts text page-by-page using pdfplumber and identifies images using PyMuPDF."*
 >
-> **Step 2:** Go to Upload & Ingest → upload a PDF → run the pipeline →
-> *"The pipeline extracts text, builds concepts & relationships, and indexes
-> everything in FAISS for semantic search."*
+> **Step 2:** Open Text Processing tab \u2192
+> *"Here I demonstrate tokenization, POS tagging, and Named Entity Recognition using spaCy and NLTK."*
 >
-> **Step 3:** Open Student Chat → ask a question → *"It uses RAG — retrieves
-> relevant chunks from FAISS, then sends them to Gemini for a grounded answer.
-> Sentiment of each query is tracked using NLTK VADER."*
+> **Step 3:** Open Word Cloud & Frequency tab \u2192
+> *"Word Cloud visualization shows the most prominent terms. The frequency distribution uses NLTK FreqDist."*
 >
-> **Step 4:** Open NLP Analytics → *"Here I applied techniques from our NLP labs —
-> Word Cloud visualization, NLTK frequency distributions, TF-IDF cosine similarity
-> between documents, and VADER sentiment analysis on student queries."*
+> **Step 4:** Open Document Analytics tab \u2192
+> *"TF-IDF cosine similarity shows how similar document pages are. VADER sentiment analysis scores each page. N-gram analysis reveals common multi-word phrases."*
 >
-> **Step 5:** Open Faculty Dashboard → *"Faculty can see the knowledge graph,
-> search concepts, and review analytics."*
+> **Step 5:** Open Image Processing tab \u2192
+> *"Images extracted from PDFs are processed using OpenCV \u2014 grayscale conversion, Gaussian blur, Canny edge detection, and thresholding. Histograms show pixel intensity distributions."*
 >
-> **Step 6:** Show Admin → *"Admins can rebuild the pipeline, clear data for a
-> new subject, and check environment health."*
+> **Step 6:** Open Knowledge Graph tab \u2192
+> *"spaCy extracts key concepts through noun chunk analysis and lemmatization. NetworkX visualizes the concept co-occurrence relationships as a graph."*
 """
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# TAB 1 — Upload & Ingest
-# ═══════════════════════════════════════════════════════════════════════════
+# =====================================================================
+# TAB 1 - Upload & Process
+# =====================================================================
 
 with tab_upload:
-    st.header("\U0001f4e4 Upload & Ingest Course Materials")
+    st.header("\U0001f4e4 Upload & Process Course Materials")
     st.markdown(
-        "Upload lecture slides, audio recordings, or past question papers. "
-        "CoursePilot extracts text, builds embeddings, and populates the "
-        "knowledge graph automatically."
+        "Upload PDF lecture slides or past question papers. CoursePilot extracts "
+        "text, images, and concepts automatically."
     )
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.subheader("\U0001f4d1 Lecture Slides")
-        slide_files = st.file_uploader(
-            "Upload PDF slides",
-            type=["pdf"],
-            accept_multiple_files=True,
-            key="slide_upload",
-        )
-        if slide_files:
-            st.success(f"{len(slide_files)} file(s) ready.")
-    with col2:
-        st.subheader("\U0001f399\ufe0f Lecture Audio")
-        audio_files = st.file_uploader(
-            "Upload audio files",
-            type=["mp3", "wav", "m4a"],
-            accept_multiple_files=True,
-            key="audio_upload",
-        )
-        if audio_files:
-            st.success(f"{len(audio_files)} file(s) ready.")
-    with col3:
-        st.subheader("\U0001f4dd Past Papers")
-        paper_files = st.file_uploader(
-            "Upload past question PDFs",
-            type=["pdf"],
-            accept_multiple_files=True,
-            key="paper_upload",
-        )
-        if paper_files:
-            st.success(f"{len(paper_files)} file(s) ready.")
-
-    st.markdown("---")
-
-    if st.button("\u25b6\ufe0f Run Ingestion Pipeline", type="primary"):
-        progress = st.progress(0, text="Starting ingestion\u2026")
-        log_pipeline("Ingestion pipeline started.")
-
-        upload_dir = PROJECT_ROOT / "data" / "uploads"
-        upload_dir.mkdir(parents=True, exist_ok=True)
-
-        all_files = (slide_files or []) + (audio_files or []) + (paper_files or [])
-        if not all_files:
-            # Check if there are existing files on disk to reprocess
-            _existing = list((upload_dir).glob("*.pdf")) if upload_dir.exists() else []
-            _existing += list((upload_dir / "papers").glob("*.pdf")) if (upload_dir / "papers").exists() else []
-            _existing += [
-                f for f in (upload_dir / "audio").iterdir()
-                if f.suffix.lower() in (".mp3", ".wav", ".m4a")
-            ] if (upload_dir / "audio").exists() else []
-            if not _existing:
-                st.warning("No files uploaded. Please upload at least one file.")
-                log_pipeline("No uploads detected.")
-            else:
-                log_pipeline(f"Re-processing {len(_existing)} existing file(s) on disk.")
-
-        # Save uploaded files to disk, tracking types separately
-        _slide_names: list = []
-        _paper_names: list = []
-        _audio_names: list = []
-        for f in (slide_files or []):
-            (upload_dir / f.name).write_bytes(f.getbuffer())
-            _slide_names.append(f.name)
-            log_pipeline(f"Saved slide: {f.name}")
-        for f in (paper_files or []):
-            _papers_dir = PROJECT_ROOT / "data" / "uploads" / "papers"
-            _papers_dir.mkdir(parents=True, exist_ok=True)
-            (_papers_dir / f.name).write_bytes(f.getbuffer())
-            _paper_names.append(f.name)
-            log_pipeline(f"Saved past paper: {f.name}")
-        for f in (audio_files or []):
-            _audio_dir = PROJECT_ROOT / "data" / "uploads" / "audio"
-            _audio_dir.mkdir(parents=True, exist_ok=True)
-            (_audio_dir / f.name).write_bytes(f.getbuffer())
-            _audio_names.append(f.name)
-            log_pipeline(f"Saved audio: {f.name}")
-
-        progress.progress(15, text="Files saved. Collecting documents\u2026")
-
-        docs: list = []
-        try:
-            docs = collect_all_documents(log_fn=log_pipeline)
-            if not docs:
-                st.error(
-                    "No processable documents found. "
-                    "Upload PDF slides or install openai-whisper for audio support."
-                )
-                log_pipeline("ERROR: No documents to process.")
-            else:
-                log_pipeline(f"Total documents: {len(docs)}")
-            progress.progress(40, text="Text extracted. Building concepts & index\u2026")
-        except Exception as exc:
-            st.error(f"Document extraction failed: {exc}")
-            log_pipeline(f"ERROR: {exc}")
-
-        _pipeline_ok = False
-        if docs:
-            try:
-                n_c, n_e, n_v = rebuild_pipeline(docs, log_fn=log_pipeline)
-                progress.progress(90, text="Pipeline complete. Finalizing\u2026")
-                _pipeline_ok = True
-            except Exception as exc:
-                st.error(f"Pipeline failed: {exc}")
-                log_pipeline(f"ERROR: {exc}")
-
-        if _pipeline_ok:
-            progress.progress(100, text="\u2705 Ingestion complete!")
-            log_pipeline("Ingestion pipeline finished.")
-            st.success(
-                f"\u2705 Ingestion complete! "
-                f"{n_v} document(s), {n_c} concepts, {n_e} relationships."
-            )
-            st.rerun()
-        else:
-            progress.progress(100, text="\u26a0\ufe0f Ingestion had issues.")
-            if not docs:
-                st.warning(
-                    "No documents could be extracted. "
-                    "**PDF slides** are recommended for best results. "
-                    "Audio files require `openai-whisper` to be installed."
-                )
-
-    if st.session_state.pipeline_logs:
-        with st.expander("\U0001f4cb Pipeline Logs", expanded=True):
-            for entry in st.session_state.pipeline_logs[-20:]:
-                st.text(entry)
-
-    # ── Manage Uploaded Files ──────────────────────────────────────────────
-    st.markdown("---")
-    st.subheader("\U0001f4c1 Manage Uploaded Files")
-    st.caption(
-        "Remove individual files below. The pipeline will automatically "
-        "rebuild concepts, edges, and the search index from the remaining files."
+    uploaded_pdfs = st.file_uploader(
+        "Upload PDF files",
+        type=["pdf"],
+        accept_multiple_files=True,
+        key="pdf_upload",
     )
 
-    _up_root = PROJECT_ROOT / "data" / "uploads"
-    _mgr_slides = sorted(_up_root.glob("*.pdf")) if _up_root.exists() else []
-    _mgr_papers = sorted(((_up_root / "papers").glob("*.pdf"))) if (_up_root / "papers").exists() else []
-    _mgr_audio = (
-        sorted(
-            f for f in (_up_root / "audio").iterdir()
-            if f.suffix.lower() in (".mp3", ".wav", ".m4a")
-        )
-        if (_up_root / "audio").exists()
-        else []
-    )
-    _mgr_total = len(_mgr_slides) + len(_mgr_papers) + len(_mgr_audio)
+    if uploaded_pdfs:
+        st.success(f"{len(uploaded_pdfs)} PDF(s) ready for processing.")
 
-    if _mgr_total == 0:
-        st.info("No uploaded files yet. Use the upload section above to add materials.")
-    else:
-        _files_to_delete: list = []
+    if st.button("\u25b6\ufe0f Process Materials", type="primary", disabled=not uploaded_pdfs):
+        with st.status("Processing course materials\u2026", expanded=True) as status:
+            st.write("\U0001f4c4 Extracting text from PDFs (pdfplumber)\u2026")
+            page_texts = extract_text_from_pdfs(uploaded_pdfs)
+            st.write(f"\u2705 Extracted text from {len(page_texts)} pages.")
 
-        if _mgr_slides:
-            st.markdown("**\U0001f4d1 Lecture Slides**")
-            for _f in _mgr_slides:
-                _sz = _f.stat().st_size / 1024
-                if st.checkbox(
-                    f"\U0001f4c4 {_f.name} ({_sz:.0f} KB)",
-                    key=f"mgr_slide_{_f.name}",
-                ):
-                    _files_to_delete.append(_f)
+            st.write("\U0001f5bc\ufe0f Extracting images from PDFs (PyMuPDF)\u2026")
+            pdf_images = extract_images_from_pdfs(uploaded_pdfs)
+            st.write(f"\u2705 Found {len(pdf_images)} image(s).")
 
-        if _mgr_papers:
-            st.markdown("**\U0001f4dd Past Papers**")
-            for _f in _mgr_papers:
-                _sz = _f.stat().st_size / 1024
-                if st.checkbox(
-                    f"\U0001f4c4 {_f.name} ({_sz:.0f} KB)",
-                    key=f"mgr_paper_{_f.name}",
-                ):
-                    _files_to_delete.append(_f)
-
-        if _mgr_audio:
-            st.markdown("**\U0001f399\ufe0f Audio Files**")
-            for _f in _mgr_audio:
-                _sz = _f.stat().st_size / 1024
-                if st.checkbox(
-                    f"\U0001f399\ufe0f {_f.name} ({_sz:.0f} KB)",
-                    key=f"mgr_audio_{_f.name}",
-                ):
-                    _files_to_delete.append(_f)
-
-        if _files_to_delete:
-            st.warning(f"**{len(_files_to_delete)} file(s) selected for removal.**")
-            if st.button(
-                "\U0001f5d1\ufe0f Remove Selected & Rebuild Pipeline",
-                type="primary",
-                key="mgr_delete_rebuild",
-            ):
-                # Delete selected files
-                for _f in _files_to_delete:
-                    _f.unlink()
-                    log_pipeline(f"Removed: {_f.name}")
-
-                # Clean up empty subdirectories
-                for _subdir in [_up_root / "papers", _up_root / "audio"]:
-                    if _subdir.exists() and not any(_subdir.iterdir()):
-                        _subdir.rmdir()
-
-                # Rebuild pipeline from remaining data
-                with st.spinner(
-                    "Rebuilding concepts, edges & index from remaining files\u2026"
-                ):
-                    try:
-                        remaining = collect_all_documents(log_fn=log_pipeline)
-                        if remaining:
-                            n_c, n_e, n_v = rebuild_pipeline(
-                                remaining, log_fn=log_pipeline
-                            )
-                            log_pipeline(
-                                f"Rebuild complete: {n_c} concepts, "
-                                f"{n_e} edges, {n_v} vectors."
-                            )
-                            st.success(
-                                f"\u2705 Removed {len(_files_to_delete)} file(s). "
-                                f"Rebuilt with {n_v} documents, "
-                                f"{n_c} concepts, {n_e} edges."
-                            )
-                        else:
-                            # No documents left — clear derived data
-                            import shutil
-
-                            _fi = Path(FAISS_INDEX_DIR)
-                            if _fi.exists():
-                                shutil.rmtree(str(_fi))
-                            for _csv in (_CONCEPTS_CSV, _EDGES_CSV):
-                                _cp = Path(_csv)
-                                if _cp.exists():
-                                    _cp.unlink()
-                            from backend.neo4j_import import reset_graph_cache
-
-                            reset_graph_cache()
-                            log_pipeline("All files removed. Derived data cleared.")
-                            st.success(
-                                "\u2705 All files removed. "
-                                "Index and concepts cleared."
-                            )
-                    except Exception as _exc:
-                        st.error(f"Rebuild failed: {_exc}")
-                        log_pipeline(f"ERROR rebuild: {_exc}")
-                st.rerun()
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# TAB 2 — Student Chat (RAG)
-# ═══════════════════════════════════════════════════════════════════════════
-
-with tab_chat:
-    st.header("\U0001f4ac Ask CoursePilot")
-
-    if not _idx_exists(FAISS_INDEX_DIR):
-        st.warning(
-            "\u26a0\ufe0f No documents indexed yet. Go to the **Upload & Ingest** tab "
-            "to upload your course materials first."
-        )
-    else:
-        st.caption(
-            "Ask any question about your course materials. CoursePilot retrieves "
-            "relevant content and generates a detailed answer powered by Gemini AI."
-        )
-
-        # Consume any pending follow-up question
-        _pending_q = st.session_state.pop("_pending_q", None)
-
-        # ── Render chat history ──
-        for _msg in st.session_state.messages:
-            with st.chat_message(_msg["role"]):
-                st.markdown(_msg["content"])
-                if _msg["role"] == "assistant" and _msg.get("provenance"):
-                    with st.expander("\U0001f4cc Sources & References", expanded=False):
-                        for _j, _prov in enumerate(_msg["provenance"], 1):
-                            _src = _prov.get("source_type", "unknown")
-                            _snip = _prov.get("snippet", "")
-                            _icon = {"slide": "\U0001f4d1", "lecture": "\U0001f399\ufe0f"}.get(
-                                _src, "\U0001f4dd"
-                            )
-                            st.caption(f"{_icon} **[{_j}]** {_src.title()} \u2014 _{_snip}_")
-
-        # ── Follow-up suggestions from last assistant message ──
-        if (
-            st.session_state.messages
-            and st.session_state.messages[-1]["role"] == "assistant"
-            and st.session_state.messages[-1].get("follow_ups")
-        ):
-            _fu_prefix = len(st.session_state.messages)
-            st.markdown("**\U0001f4a1 Suggested follow-up questions:**")
-            for _fi, _fq in enumerate(st.session_state.messages[-1]["follow_ups"]):
-                if st.button(f"\u27a4 {_fq}", key=f"fu_{_fu_prefix}_{_fi}"):
-                    st.session_state["_pending_q"] = _fq
-                    st.rerun()
-
-        # ── Starter questions (shown only when chat is empty) ──
-        if not st.session_state.messages:
-            st.markdown("---")
-            st.markdown("**\U0001f3af Try asking:**")
-            _starters = [
-                "Summarize the key concepts from the uploaded documents",
-                "What are the main topics covered in the course materials?",
-                "Explain the most important concept from the lectures",
-            ]
-            _starter_cols = st.columns(len(_starters))
-            for _si, _sq in enumerate(_starters):
-                with _starter_cols[_si]:
-                    if st.button(
-                        _sq, key=f"starter_{_si}", use_container_width=True,
-                    ):
-                        st.session_state["_pending_q"] = _sq
-                        st.rerun()
-
-        # ── Chat input ──
-        _user_input = st.chat_input("Ask about your course materials\u2026")
-        _query = _pending_q or _user_input
-
-        if _query:
-            # Track query sentiment (VADER)
-            try:
-                from nltk.sentiment import SentimentIntensityAnalyzer as _SIA
-                _sia = _SIA()
-                _sent_scores = _sia.polarity_scores(_query)
-                st.session_state.query_sentiments.append({
-                    "query": _query[:80],
-                    "compound": _sent_scores["compound"],
-                    "pos": _sent_scores["pos"],
-                    "neg": _sent_scores["neg"],
-                    "neu": _sent_scores["neu"],
-                })
-            except Exception:
-                pass
-
-            # Show user message
-            st.session_state.messages.append({"role": "user", "content": _query})
-            with st.chat_message("user"):
-                st.markdown(_query)
-
-            # Generate answer
-            with st.chat_message("assistant"):
-                with st.spinner("Searching course materials\u2026"):
-                    try:
-                        from backend.retriever import (
-                            answer_query,
-                            generate_follow_up_questions,
-                        )
-
-                        _result = answer_query(
-                            _query,
-                            faiss_index_dir=FAISS_INDEX_DIR,
-                        )
-                        _answer = _result["answer"]
-                        _provenance = _result.get("provenance", [])
-                        _follow_ups = generate_follow_up_questions(_query, _answer)
-                    except Exception as _exc:
-                        _answer = f"Sorry, an error occurred: {_exc}"
-                        _provenance = []
-                        _follow_ups = []
-
-                st.markdown(_answer)
-
-            # Save to history and rerun to show follow-ups properly
-            st.session_state.messages.append(
-                {
-                    "role": "assistant",
-                    "content": _answer,
-                    "provenance": _provenance,
-                    "follow_ups": _follow_ups,
-                }
-            )
-            st.rerun()
-
-        # ── Clear chat ──
-        if st.session_state.messages:
-            if st.button("\U0001f5d1\ufe0f Clear Chat History"):
-                st.session_state.messages = []
-                st.rerun()
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# TAB 3 — Q&A Generator
-# ═══════════════════════════════════════════════════════════════════════════
-
-with tab_qa:
-    st.header("\U0001f4dd Study Q&A Generator")
-    st.markdown(
-        "Automatically generate study questions and answers from your "
-        "uploaded course materials. Use these for self-assessment and "
-        "exam preparation."
-    )
-
-    if not _idx_exists(FAISS_INDEX_DIR):
-        st.warning("\u26a0\ufe0f Upload and ingest documents first.")
-    else:
-        _qa_c1, _qa_c2 = st.columns([2, 1])
-        with _qa_c1:
-            _n_qs = st.slider(
-                "Number of questions to generate",
-                min_value=5,
-                max_value=25,
-                value=10,
-                step=5,
-                help="More questions take longer to generate.",
-            )
-            _q_type = st.pills(
-                "Question Type",
-                ["All Types", "Conceptual", "Analytical", "Short Answer"],
-                default="All Types",
-            )
-        with _qa_c2:
-            st.info(
-                f"\U0001f4c4 **{_n_docs}** document pages indexed\n\n"
-                f"\U0001f4a1 **{_n_concepts}** concepts extracted\n\n"
-                f"\U0001f517 **{_n_edges}** relationships mapped\n\n"
-                "\U0001f916 Powered by Gemini AI"
-            )
-
-        if st.button("\U0001f680 Generate Questions", type="primary"):
-            with st.spinner(
-                "Generating study questions\u2026 this may take 30\u201360 seconds."
-            ):
+            concepts = []
+            edges = []
+            if page_texts:
+                st.write("\U0001f9e0 Extracting concepts with NLP (spaCy)\u2026")
                 try:
-                    from backend.retriever import generate_qa_from_documents
-
-                    _qa_pairs = generate_qa_from_documents(
-                        faiss_index_dir=FAISS_INDEX_DIR,
-                        n_questions=_n_qs,
-                        question_type=_q_type if _q_type != "All Types" else None,
+                    from backend.extract_concepts import (
+                        extract_concepts_from_documents,
+                        extract_relations,
                     )
-                    st.session_state.generated_qa = _qa_pairs
-                except Exception as _exc:
-                    st.error(f"Generation failed: {_exc}")
+                    docs = [{
+                        "doc_id": f"{p['filename']}_p{p['page']}",
+                        "source_type": "slide",
+                        "text": p["text"],
+                        "metadata": {"filename": p["filename"], "page": p["page"]},
+                    } for p in page_texts]
+                    concepts, concept_docs = extract_concepts_from_documents(docs)
+                    edges = extract_relations(docs, concepts, concept_docs)
+                    st.write(f"\u2705 Extracted {len(concepts)} concepts and {len(edges)} relationships.")
+                except Exception as e:
+                    st.write(f"\u26a0\ufe0f Concept extraction: {e}")
 
-        # Display generated Q&A
-        if st.session_state.generated_qa:
-            st.markdown("---")
-            st.subheader(
-                f"\U0001f4cb Generated Questions ({len(st.session_state.generated_qa)})"
-            )
+            st.session_state.page_texts = page_texts
+            st.session_state.pdf_images = pdf_images
+            st.session_state.concepts = concepts
+            st.session_state.edges = edges
+            st.session_state.processed = True
+            status.update(label="\u2705 Processing complete!", state="complete")
+        st.rerun()
 
-            for _qi, _qa in enumerate(st.session_state.generated_qa, 1):
-                with st.expander(
-                    f"**Q{_qi}.** {_qa['question']}", expanded=(_qi <= 2)
-                ):
-                    st.markdown(_qa["answer"])
-                    st.feedback("thumbs", key=f"qa_fb_{_qi}")
+    if st.session_state.processed:
+        st.markdown("---")
+        page_texts = st.session_state.page_texts
+        m1, m2, m3, m4 = st.columns(4)
+        n_files = len(set(p["filename"] for p in page_texts))
+        m1.metric("\U0001f4c1 PDF Files", n_files)
+        m2.metric("\U0001f4c4 Pages Extracted", len(page_texts))
+        m3.metric("\U0001f4a1 Concepts Found", len(st.session_state.concepts))
+        m4.metric("\U0001f5bc\ufe0f Images Found", len(st.session_state.pdf_images))
 
-            # Download button
-            _qa_text = "\n\n".join(
-                f"Q{i}: {qa['question']}\nA: {qa['answer']}"
-                for i, qa in enumerate(st.session_state.generated_qa, 1)
-            )
-            st.download_button(
-                "\U0001f4e5 Download Q&A as Text",
-                data=_qa_text,
-                file_name="coursepilot_study_questions.txt",
-                mime="text/plain",
-            )
+        st.markdown("---")
+        st.subheader("\U0001f4c4 Extracted Text Preview")
+        for filename in sorted(set(p["filename"] for p in page_texts)):
+            file_pages = [p for p in page_texts if p["filename"] == filename]
+            with st.expander(f"\U0001f4c1 {filename} ({len(file_pages)} pages)", expanded=False):
+                for p in file_pages[:10]:
+                    st.caption(f"**Page {p['page']}**")
+                    st.text(p["text"][:500] + ("\u2026" if len(p["text"]) > 500 else ""))
+                    st.markdown("---")
+                if len(file_pages) > 10:
+                    st.caption(f"\u2026 and {len(file_pages) - 10} more pages")
+
+        st.markdown("---")
+        if st.button("\U0001f5d1\ufe0f Clear All Data & Start Over"):
+            for k, v in _DEFAULTS.items():
+                st.session_state[k] = type(v)() if not isinstance(v, bool) else False
+            st.rerun()
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# TAB — NLP Analytics (Word Cloud, FreqDist, Similarity, Sentiment)
-# ═══════════════════════════════════════════════════════════════════════════
+# =====================================================================
+# TAB 2 - Text Processing
+# =====================================================================
 
-with tab_nlp:
-    st.header("\U0001f9e0 NLP Analytics — Applied Techniques")
-    st.caption(
-        "Techniques from NLTK, sklearn, and WordCloud labs, applied to your "
-        "actual course materials."
-    )
+with tab_text:
+    st.header("\U0001f4dd Text Processing \u2014 NLP Techniques")
+    st.caption("Tokenization, POS tagging, NER, and lemmatization using spaCy and NLTK.")
 
-    if not _idx_exists(FAISS_INDEX_DIR):
-        st.warning(
-            "\u26a0\ufe0f No documents indexed yet. Upload and ingest materials first."
-        )
+    if not st.session_state.processed:
+        st.warning("\u26a0\ufe0f Upload and process documents first (Upload & Process tab).")
     else:
-        # Load document texts from FAISS metadata
-        _meta_path = Path(FAISS_INDEX_DIR) / "metadata.json"
-        _all_texts: list[str] = []
-        _doc_labels: list[str] = []
-        if _meta_path.exists():
-            _meta = json.loads(_meta_path.read_text(encoding="utf-8"))
-            for _m in _meta:
-                _t = _m.get("text", "")
-                if _t.strip():
-                    _all_texts.append(_t)
-                    _doc_labels.append(
-                        _m.get("metadata", {}).get("filename", "doc") + f" p{_m.get('doc_id', '?')}"
-                    )
+        ensure_nltk_data()
+        import nltk
 
-        if not _all_texts:
-            st.info("No document text available.")
-        else:
-            import matplotlib.pyplot as plt
-            import numpy as np
-            import re as _re
+        page_texts = st.session_state.page_texts
+        page_options = [f"{p['filename']} \u2014 Page {p['page']}" for p in page_texts]
+        selected_idx = st.selectbox(
+            "Select a page to analyze",
+            range(len(page_options)),
+            format_func=lambda i: page_options[i],
+        )
+        sample_text = page_texts[selected_idx]["text"]
 
-            # Preprocessing helper
-            from nltk.corpus import stopwords as _sw_corpus
+        st.subheader("\U0001f4c4 Raw Text")
+        st.text_area("", sample_text, height=120, disabled=True, key="raw_text_view")
+        st.markdown("---")
+
+        # Tokenization
+        col_wt, col_st = st.columns(2)
+        with col_wt:
+            st.subheader("\U0001f524 Word Tokenization (NLTK)")
+            tokens = nltk.word_tokenize(sample_text)
+            st.metric("Total Tokens", len(tokens))
+            st.write(tokens[:50])
+            if len(tokens) > 50:
+                st.caption(f"Showing first 50 of {len(tokens)} tokens")
+
+        with col_st:
+            st.subheader("\U0001f4dd Sentence Tokenization (NLTK)")
+            sentences = nltk.sent_tokenize(sample_text)
+            st.metric("Total Sentences", len(sentences))
+            for i, sent in enumerate(sentences[:10], 1):
+                st.caption(f"**{i}.** {sent}")
+            if len(sentences) > 10:
+                st.caption(f"\u2026 and {len(sentences) - 10} more sentences")
+
+        st.markdown("---")
+
+        # POS Tagging & NER (spaCy)
+        try:
+            import spacy
             try:
-                _stop_words = set(_sw_corpus.words("english"))
-            except LookupError:
-                import nltk as _nltk_dl
-                _nltk_dl.download("stopwords", quiet=True)
-                _stop_words = set(_sw_corpus.words("english"))
+                nlp = spacy.load("en_core_web_sm")
+            except OSError:
+                nlp = None
+                st.warning("spaCy model not found. Install: `python -m spacy download en_core_web_sm`")
+        except ImportError:
+            nlp = None
+            st.warning("spaCy not installed.")
 
-            _combined_text = " ".join(_all_texts)
+        if nlp:
+            doc = nlp(sample_text[:5000])
 
-            def _clean_text(text: str) -> str:
-                text = text.lower()
-                text = _re.sub(r"[^a-z\s]", "", text)
-                text = _re.sub(r"\s+", " ", text).strip()
-                return " ".join(w for w in text.split() if w not in _stop_words and len(w) > 2)
+            col_pos, col_ner = st.columns(2)
+            with col_pos:
+                st.subheader("\U0001f3f7\ufe0f POS Tagging (spaCy)")
+                pos_data = [
+                    {"Token": token.text, "POS": token.pos_, "Tag": token.tag_,
+                     "Explanation": spacy.explain(token.tag_) or ""}
+                    for token in doc if not token.is_space
+                ][:50]
+                st.dataframe(pd.DataFrame(pos_data), height=400, hide_index=True)
 
-            _cleaned_combined = _clean_text(_combined_text)
-
-            # ── Section 1: Word Cloud ──────────────────────────────────
-            st.subheader("\u2601\ufe0f Word Cloud of Course Materials")
-            st.caption("Visual representation of the most prominent terms (WordCloud library, from NLTK lab).")
-
-            try:
-                from wordcloud import WordCloud as _WC
-
-                _wc = _WC(
-                    width=1000,
-                    height=400,
-                    background_color="white",
-                    max_words=150,
-                    colormap="viridis",
-                    collocations=False,
-                ).generate(_cleaned_combined)
-
-                _fig_wc, _ax_wc = plt.subplots(figsize=(12, 5))
-                _ax_wc.imshow(_wc, interpolation="bilinear")
-                _ax_wc.axis("off")
-                _ax_wc.set_title("Word Cloud — Key Terms from Course Materials", fontsize=13)
-                st.pyplot(_fig_wc)
-                plt.close(_fig_wc)
-            except ImportError:
-                st.info("Install `wordcloud` package: `pip install wordcloud`")
+            with col_ner:
+                st.subheader("\U0001f50d Named Entity Recognition (spaCy)")
+                entities = [
+                    {"Text": ent.text, "Label": ent.label_,
+                     "Description": spacy.explain(ent.label_) or ""}
+                    for ent in doc.ents
+                ]
+                if entities:
+                    st.dataframe(pd.DataFrame(entities), height=400, hide_index=True)
+                else:
+                    st.info("No named entities found in this page.")
 
             st.markdown("---")
 
-            # ── Section 2: Frequency Distribution ──────────────────────
-            st.subheader("\U0001f4ca Frequency Distribution (NLTK FreqDist)")
-            st.caption("Top N most frequent terms after stopword removal and cleaning.")
-
-            import nltk as _nltk_fd
-            _words_list = _nltk_fd.tokenize.word_tokenize(_cleaned_combined)
-            _fd = _nltk_fd.FreqDist(_words_list)
-
-            _top_n_fd = st.slider("Number of terms", 10, 40, 20, key="nlp_fd_n")
-            _top_words = _fd.most_common(_top_n_fd)
-            _labels_fd, _counts_fd = zip(*_top_words) if _top_words else ([], [])
-
-            _fig_fd, _ax_fd = plt.subplots(figsize=(12, 4))
-            _ax_fd.bar(range(len(_labels_fd)), _counts_fd, color="#6366f1", edgecolor="white")
-            _ax_fd.set_xticks(range(len(_labels_fd)))
-            _ax_fd.set_xticklabels(_labels_fd, rotation=45, ha="right", fontsize=8)
-            _ax_fd.set_ylabel("Frequency")
-            _ax_fd.set_title(f"Top {_top_n_fd} Terms — Frequency Distribution")
-            plt.tight_layout()
-            st.pyplot(_fig_fd)
-            plt.close(_fig_fd)
-
-            st.markdown("---")
-
-            # ── Section 3: TF-IDF Document Similarity ──────────────────
-            st.subheader("\U0001f50d Document Similarity (TF-IDF + Cosine)")
-            st.caption(
-                "Compute TF-IDF vectors for each page, then measure cosine similarity "
-                "between documents (sklearn, from NLTK/NLP lab)."
-            )
-
-            from sklearn.feature_extraction.text import TfidfVectorizer as _TfidfV
-            from sklearn.metrics.pairwise import cosine_similarity as _cos_sim
-
-            # Limit to first N docs for performance
-            _max_sim_docs = min(30, len(_all_texts))
-            _sim_texts = _all_texts[:_max_sim_docs]
-
-            _tfidf = _TfidfV(max_features=500, stop_words="english")
-            _tfidf_matrix = _tfidf.fit_transform(_sim_texts)
-            _sim_matrix = _cos_sim(_tfidf_matrix)
-
-            _fig_sim, _ax_sim = plt.subplots(figsize=(10, 8))
-            _im = _ax_sim.imshow(_sim_matrix, cmap="YlOrRd", aspect="auto")
-            _ax_sim.set_title(f"Cosine Similarity Matrix ({_max_sim_docs} documents)")
-            _ax_sim.set_xlabel("Document Index")
-            _ax_sim.set_ylabel("Document Index")
-            _fig_sim.colorbar(_im, ax=_ax_sim, label="Similarity")
-            st.pyplot(_fig_sim)
-            plt.close(_fig_sim)
-
-            # Show most similar pair
-            _np = np.array(_sim_matrix)
-            np.fill_diagonal(_np, 0)
-            _max_idx = np.unravel_index(_np.argmax(), _np.shape)
-            st.info(
-                f"**Most similar pair:** Document {_max_idx[0]+1} & "
-                f"Document {_max_idx[1]+1} — "
-                f"similarity = {_np[_max_idx]:.3f}"
-            )
-
-            st.markdown("---")
-
-            # ── Section 4: Sentiment Analysis of Student Queries ──────
-            st.subheader("\U0001f4ac Sentiment Analysis (NLTK VADER)")
-            st.caption(
-                "VADER sentiment scores for student queries in the chat. "
-                "Tracks whether questions are confident, neutral, or confused."
-            )
-
-            _sentiments = st.session_state.get("query_sentiments", [])
-            if not _sentiments:
-                st.info(
-                    "No student queries yet. Go to the **Student Chat** tab, "
-                    "ask some questions, and return here to see sentiment analysis."
-                )
+            # Lemmatization
+            st.subheader("\U0001f4d6 Lemmatization (spaCy)")
+            lemma_data = [
+                {"Token": token.text, "Lemma": token.lemma_, "POS": token.pos_}
+                for token in doc
+                if not token.is_space and token.text.lower() != token.lemma_
+            ][:30]
+            if lemma_data:
+                st.dataframe(pd.DataFrame(lemma_data), hide_index=True)
+                st.caption("Showing tokens where the lemma differs from the original form.")
             else:
-                import pandas as _pd_sent
+                st.info("All tokens match their lemmas in this page.")
 
-                _df_sent = _pd_sent.DataFrame(_sentiments)
+            st.markdown("---")
 
-                # Sentiment distribution
-                def _classify_sent(compound):
-                    if compound >= 0.05:
+            # POS Distribution
+            st.subheader("\U0001f4ca POS Tag Distribution")
+            pos_counts = pd.Series([token.pos_ for token in doc if not token.is_space]).value_counts()
+            fig_pos, ax_pos = plt.subplots(figsize=(10, 4))
+            pos_counts.plot(kind="bar", ax=ax_pos, color="#6366f1", edgecolor="white")
+            ax_pos.set_title("Part-of-Speech Tag Distribution")
+            ax_pos.set_ylabel("Count")
+            plt.xticks(rotation=45, ha="right")
+            plt.tight_layout()
+            st.pyplot(fig_pos)
+            plt.close(fig_pos)
+
+
+# =====================================================================
+# TAB 3 - Word Cloud & Frequency
+# =====================================================================
+
+with tab_wc:
+    st.header("\u2601\ufe0f Word Cloud & Frequency Distribution")
+    st.caption("Visual overview of prominent terms using WordCloud and NLTK FreqDist.")
+
+    if not st.session_state.processed:
+        st.warning("\u26a0\ufe0f Upload and process documents first (Upload & Process tab).")
+    else:
+        ensure_nltk_data()
+        import nltk
+
+        page_texts = st.session_state.page_texts
+        stop_words = get_stopwords()
+        combined_text = " ".join(p["text"] for p in page_texts)
+        cleaned = clean_text(combined_text)
+        cleaned_words = remove_stopwords(cleaned, stop_words)
+
+        # Word Cloud settings
+        col_s1, col_s2, col_s3 = st.columns(3)
+        with col_s1:
+            max_words = st.slider("Max Words", 50, 300, 150, key="wc_max")
+        with col_s2:
+            colormap = st.selectbox("Color Map", ["viridis", "plasma", "inferno", "magma", "coolwarm", "Set2"])
+        with col_s3:
+            bg_color = st.selectbox("Background", ["white", "black"])
+
+        st.subheader("\u2601\ufe0f Word Cloud \u2014 Key Terms from Course Materials")
+        try:
+            from wordcloud import WordCloud
+            wc = WordCloud(
+                width=1200, height=500, background_color=bg_color,
+                max_words=max_words, colormap=colormap, collocations=False,
+            ).generate(cleaned_words)
+            fig_wc, ax_wc = plt.subplots(figsize=(14, 6))
+            ax_wc.imshow(wc, interpolation="bilinear")
+            ax_wc.axis("off")
+            st.pyplot(fig_wc)
+            plt.close(fig_wc)
+        except ImportError:
+            st.error("Install `wordcloud`: `pip install wordcloud`")
+
+        st.markdown("---")
+
+        # Frequency Distribution
+        st.subheader("\U0001f4ca Frequency Distribution (NLTK FreqDist)")
+        word_tokens = nltk.word_tokenize(cleaned_words)
+        fd = nltk.FreqDist(word_tokens)
+        top_n = st.slider("Number of terms", 10, 50, 25, key="fd_n")
+        top_words = fd.most_common(top_n)
+
+        if top_words:
+            labels_fd, counts_fd = zip(*top_words)
+            fig_fd, ax_fd = plt.subplots(figsize=(14, 5))
+            ax_fd.bar(range(len(labels_fd)), counts_fd, color="#6366f1", edgecolor="white")
+            ax_fd.set_xticks(range(len(labels_fd)))
+            ax_fd.set_xticklabels(labels_fd, rotation=45, ha="right", fontsize=8)
+            ax_fd.set_ylabel("Frequency")
+            ax_fd.set_title(f"Top {top_n} Terms \u2014 NLTK Frequency Distribution")
+            plt.tight_layout()
+            st.pyplot(fig_fd)
+            plt.close(fig_fd)
+
+        st.markdown("---")
+        v1, v2, v3 = st.columns(3)
+        v1.metric("Total Words", len(word_tokens))
+        v2.metric("Unique Words", len(fd))
+        v3.metric("Lexical Diversity", f"{len(fd) / max(len(word_tokens), 1):.2%}")
+
+
+# =====================================================================
+# TAB 4 - Document Analytics
+# =====================================================================
+
+with tab_analytics:
+    st.header("\U0001f4ca Document Analytics")
+    st.caption("TF-IDF similarity, VADER sentiment, and N-gram analysis.")
+
+    if not st.session_state.processed:
+        st.warning("\u26a0\ufe0f Upload and process documents first (Upload & Process tab).")
+    else:
+        ensure_nltk_data()
+        import nltk
+
+        page_texts = st.session_state.page_texts
+        all_texts = [p["text"] for p in page_texts]
+
+        # TF-IDF Document Similarity
+        st.subheader("\U0001f50d Document Similarity (TF-IDF + Cosine)")
+        st.caption("TF-IDF vectors for each page, cosine similarity between documents (sklearn).")
+
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        max_docs = min(30, len(all_texts))
+        sim_texts = all_texts[:max_docs]
+        tfidf = TfidfVectorizer(max_features=500, stop_words="english")
+        tfidf_matrix = tfidf.fit_transform(sim_texts)
+        sim_matrix = cosine_similarity(tfidf_matrix)
+
+        fig_sim, ax_sim = plt.subplots(figsize=(10, 8))
+        im = ax_sim.imshow(sim_matrix, cmap="YlOrRd", aspect="auto")
+        ax_sim.set_title(f"Cosine Similarity Matrix ({max_docs} pages)")
+        ax_sim.set_xlabel("Page Index")
+        ax_sim.set_ylabel("Page Index")
+        fig_sim.colorbar(im, ax=ax_sim, label="Similarity")
+        st.pyplot(fig_sim)
+        plt.close(fig_sim)
+
+        sim_np = np.array(sim_matrix)
+        np.fill_diagonal(sim_np, 0)
+        if sim_np.max() > 0:
+            max_idx = np.unravel_index(sim_np.argmax(), sim_np.shape)
+            st.info(
+                f"**Most similar pair:** Page {max_idx[0] + 1} & "
+                f"Page {max_idx[1] + 1} \u2014 similarity = {sim_np[max_idx]:.3f}"
+            )
+
+        st.markdown("---")
+
+        # VADER Sentiment Analysis
+        st.subheader("\U0001f4ac Sentiment Analysis (NLTK VADER)")
+        st.caption("VADER sentiment scores for each page of the course materials.")
+
+        try:
+            from nltk.sentiment import SentimentIntensityAnalyzer
+            sia = SentimentIntensityAnalyzer()
+            sentiments = []
+            for p in page_texts:
+                scores = sia.polarity_scores(p["text"])
+                sentiments.append({
+                    "Page": f"{p['filename']} p{p['page']}",
+                    "Positive": round(scores["pos"], 3),
+                    "Negative": round(scores["neg"], 3),
+                    "Neutral": round(scores["neu"], 3),
+                    "Compound": round(scores["compound"], 3),
+                })
+            df_sent = pd.DataFrame(sentiments)
+
+            col_sc, col_sp = st.columns([2, 1])
+            with col_sc:
+                fig_sent, ax_sent = plt.subplots(figsize=(12, 4))
+                colors = [
+                    "#22c55e" if c >= 0.05 else "#ef4444" if c <= -0.05 else "#6366f1"
+                    for c in df_sent["Compound"]
+                ]
+                ax_sent.bar(range(len(df_sent)), df_sent["Compound"], color=colors, edgecolor="white")
+                ax_sent.axhline(y=0, color="gray", linestyle="--", alpha=0.5)
+                ax_sent.set_xlabel("Page Index")
+                ax_sent.set_ylabel("Compound Score")
+                ax_sent.set_title("VADER Sentiment \u2014 Compound Score per Page")
+                ax_sent.set_ylim(-1.1, 1.1)
+                plt.tight_layout()
+                st.pyplot(fig_sent)
+                plt.close(fig_sent)
+
+            with col_sp:
+                def _classify_sent(c):
+                    if c >= 0.05:
                         return "Positive"
-                    elif compound <= -0.05:
+                    elif c <= -0.05:
                         return "Negative"
                     return "Neutral"
 
-                _df_sent["sentiment"] = _df_sent["compound"].apply(_classify_sent)
-
-                _sc1, _sc2 = st.columns([1, 2])
-
-                with _sc1:
-                    _dist = _df_sent["sentiment"].value_counts()
-                    _colors = {"Positive": "#22c55e", "Neutral": "#6366f1", "Negative": "#ef4444"}
-                    _fig_sp, _ax_sp = plt.subplots(figsize=(4, 4))
-                    _ax_sp.bar(
-                        _dist.index,
-                        _dist.values,
-                        color=[_colors.get(s, "#999") for s in _dist.index],
-                    )
-                    _ax_sp.set_title("Query Sentiment Distribution")
-                    _ax_sp.set_ylabel("Count")
-                    plt.tight_layout()
-                    st.pyplot(_fig_sp)
-                    plt.close(_fig_sp)
-
-                with _sc2:
-                    st.markdown("**Query History with Sentiment Scores:**")
-                    _display_sent = _df_sent[["query", "compound", "sentiment"]].copy()
-                    _display_sent.columns = ["Query", "Score", "Sentiment"]
-                    st.dataframe(_display_sent, hide_index=True, height=300)
-
-                # Compound score over time
-                if len(_sentiments) > 1:
-                    _fig_ts, _ax_ts = plt.subplots(figsize=(10, 3))
-                    _ax_ts.plot(
-                        range(1, len(_sentiments) + 1),
-                        _df_sent["compound"],
-                        marker="o",
-                        color="#6366f1",
-                        linewidth=2,
-                    )
-                    _ax_ts.axhline(y=0, color="gray", linestyle="--", alpha=0.5)
-                    _ax_ts.fill_between(
-                        range(1, len(_sentiments) + 1),
-                        _df_sent["compound"],
-                        alpha=0.15,
-                        color="#6366f1",
-                    )
-                    _ax_ts.set_xlabel("Query Number")
-                    _ax_ts.set_ylabel("Compound Score")
-                    _ax_ts.set_title("Sentiment Trend Across Queries")
-                    _ax_ts.set_ylim(-1.1, 1.1)
-                    plt.tight_layout()
-                    st.pyplot(_fig_ts)
-                    plt.close(_fig_ts)
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# TAB — Faculty Dashboard
-# ═══════════════════════════════════════════════════════════════════════════
-
-with tab_faculty:
-    st.header("\U0001f4ca Faculty Dashboard \u2014 Course Analytics")
-
-    if role not in ("faculty", "admin"):
-        st.warning(
-            "\U0001f512 Faculty or Admin role required. Switch role in the sidebar."
-        )
-    else:
-        try:
-            from backend.neo4j_import import get_all_concepts, get_graph
-
-            _concepts = get_all_concepts()
-        except Exception:
-            _concepts = []
-
-        if not _concepts:
-            st.info(
-                "No concept data available yet. Run the ingestion pipeline first "
-                "(Upload & Ingest tab)."
-            )
-        else:
-            import pandas as pd
-
-            _df = pd.DataFrame(_concepts)
-
-            # ── Metrics Row ──
-            st.subheader("\U0001f4c8 Course Material Overview")
-            _m1, _m2, _m3, _m4 = st.columns(4)
-            _m1.metric("\U0001f4c4 Document Pages", _n_docs)
-            _m2.metric("\U0001f4a1 Unique Concepts", len(_concepts))
-            _G_live = get_graph()
-            _m3.metric("\U0001f517 Relationships", _G_live.number_of_edges())
-            _avg_freq = (
-                round(_df["frequency"].mean(), 1)
-                if "frequency" in _df.columns
-                else 0
-            )
-            _m4.metric("\U0001f4ca Avg Frequency", _avg_freq)
-
-            st.markdown("---")
-
-            # ── Concept Frequency Chart + Search Table ──
-            _col_chart, _col_tbl = st.columns([3, 2])
-
-            with _col_chart:
-                st.subheader("\U0001f3f7\ufe0f Top Concepts by Frequency")
-                if "label" in _df.columns and "frequency" in _df.columns:
-                    _topn = st.slider(
-                        "Number of concepts", 10, 50, 20, key="fac_topn"
-                    )
-                    _chart_data = _df.nlargest(_topn, "frequency").set_index("label")[
-                        "frequency"
-                    ]
-                    st.bar_chart(_chart_data)
-
-            with _col_tbl:
-                st.subheader("\U0001f50d Concept Search")
-                _search = st.text_input(
-                    "Filter concepts",
-                    placeholder="Type to search\u2026",
-                    key="concept_search",
+                dist = df_sent["Compound"].apply(_classify_sent).value_counts()
+                _pie_colors = {"Positive": "#22c55e", "Neutral": "#6366f1", "Negative": "#ef4444"}
+                fig_pie, ax_pie = plt.subplots(figsize=(4, 4))
+                ax_pie.pie(
+                    dist.values, labels=dist.index, autopct="%1.0f%%",
+                    colors=[_pie_colors.get(s, "#999") for s in dist.index],
                 )
-                _disp = _df[["label", "frequency"]].copy()
-                _disp.columns = ["Concept", "Frequency"]
-                _disp = _disp.sort_values("Frequency", ascending=False)
-                if _search:
-                    _disp = _disp[
-                        _disp["Concept"].str.contains(_search, case=False, na=False)
-                    ]
-                st.dataframe(_disp, height=400, hide_index=True)
+                ax_pie.set_title("Sentiment Distribution")
+                st.pyplot(fig_pie)
+                plt.close(fig_pie)
 
-            st.markdown("---")
-
-            # ── Frequency Distribution Histogram ──
-            st.subheader("\U0001f4ca Concept Frequency Distribution")
-            if "frequency" in _df.columns:
-                import matplotlib.pyplot as plt
-
-                _fig_h, _ax_h = plt.subplots(figsize=(10, 3))
-                _freq_clipped = _df["frequency"].clip(
-                    upper=_df["frequency"].quantile(0.95)
-                )
-                _ax_h.hist(
-                    _freq_clipped,
-                    bins=30,
-                    color="#6366f1",
-                    alpha=0.7,
-                    edgecolor="white",
-                )
-                _ax_h.set_xlabel("Frequency")
-                _ax_h.set_ylabel("Number of Concepts")
-                _ax_h.set_title("Distribution of Concept Frequencies")
-                st.pyplot(_fig_h)
-                plt.close(_fig_h)
-
-            st.markdown("---")
-
-            # ── Knowledge Graph Visualization ──
-            st.subheader("\U0001f578\ufe0f Knowledge Graph Visualization")
-            try:
-                import matplotlib.pyplot as plt
-                import networkx as nx
-
-                _G = get_graph()
-                if _G.number_of_nodes() > 0:
-                    _max_nodes = st.slider(
-                        "Concepts to visualize", 10, 60, 30, key="graph_n"
-                    )
-                    _sorted_n = sorted(
-                        _G.nodes(data=True),
-                        key=lambda x: x[1].get("frequency", 0),
-                        reverse=True,
-                    )
-                    _top_ids = [n for n, _ in _sorted_n[:_max_nodes]]
-                    _subG = _G.subgraph(_top_ids).copy()
-
-                    _fig_g, _ax_g = plt.subplots(figsize=(12, 7))
-                    _pos = nx.spring_layout(_subG, seed=42, k=1.5)
-                    _nsizes = [
-                        _subG.nodes[n].get("frequency", 1) * 80 for n in _subG.nodes
-                    ]
-                    _labels = {
-                        n: _subG.nodes[n].get("label", n)[:18] for n in _subG.nodes
-                    }
-                    nx.draw_networkx(
-                        _subG,
-                        _pos,
-                        ax=_ax_g,
-                        labels=_labels,
-                        node_size=_nsizes,
-                        font_size=6,
-                        node_color="#6366f1",
-                        edge_color="#e2e8f0",
-                        arrows=True,
-                        alpha=0.9,
-                    )
-                    _ax_g.set_title(
-                        f"Top {len(_subG.nodes)} Concepts "
-                        f"(of {_G.number_of_nodes()} total)"
-                    )
-                    _ax_g.axis("off")
-                    st.pyplot(_fig_g)
-                    plt.close(_fig_g)
-
-                    st.caption(
-                        f"Showing {_subG.number_of_nodes()} nodes and "
-                        f"{_subG.number_of_edges()} edges. "
-                        f"Node size reflects concept frequency."
-                    )
-                else:
-                    st.info("Graph is empty.")
-            except Exception as _exc:
-                st.warning(f"Graph visualization unavailable: {_exc}")
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# TAB 5 — Admin Panel
-# ═══════════════════════════════════════════════════════════════════════════
-
-with tab_admin:
-    st.header("\u2699\ufe0f Admin Panel")
-
-    if role != "admin":
-        st.warning(
-            "\U0001f512 Admin role required. Switch role in the sidebar."
-        )
-    else:
-        # ── Pipeline Logs ──
-        st.subheader("\U0001f4cb Pipeline Activity Logs")
-        if st.session_state.pipeline_logs:
-            st.text_area(
-                "Logs",
-                "\n".join(st.session_state.pipeline_logs),
-                height=200,
-            )
-        else:
-            st.info("No pipeline activity yet.")
+            st.dataframe(df_sent, hide_index=True, height=250)
+        except Exception as exc:
+            st.warning(f"Sentiment analysis unavailable: {exc}")
 
         st.markdown("---")
 
-        # ── Pipeline Controls ──
-        st.subheader("\U0001f527 Pipeline Controls")
-        _ca, _cb = st.columns(2)
+        # N-gram Analysis
+        st.subheader("\U0001f4dd N-gram Analysis")
+        st.caption("Most common bigrams and trigrams from course materials.")
 
-        with _ca:
-            if st.button("\U0001f504 Rebuild FAISS Index"):
-                with st.spinner("Rebuilding index + concepts\u2026"):
-                    try:
-                        _docs = collect_all_documents(log_fn=log_pipeline)
-                        if not _docs:
-                            st.error("No documents found.")
-                            st.stop()
-                        n_c, n_e, n_v = rebuild_pipeline(
-                            _docs, log_fn=log_pipeline
-                        )
-                        log_pipeline("Admin: Full rebuild complete.")
-                        st.success(
-                            f"\u2705 Rebuilt: {n_v} docs, "
-                            f"{n_c} concepts, {n_e} edges."
-                        )
-                    except Exception as _exc:
-                        st.error(f"Rebuild failed: {_exc}")
-                        log_pipeline(f"ERROR: {_exc}")
+        stop_words = get_stopwords()
+        combined = clean_text(" ".join(all_texts))
+        words = [w for w in combined.split() if w not in stop_words and len(w) > 2]
+        from nltk import ngrams as _ngrams
 
-        with _cb:
-            if st.button("\U0001f504 Import to Neo4j"):
-                with st.spinner("Importing to Neo4j\u2026"):
-                    try:
-                        from backend.neo4j_import import (
-                            get_graph as _get_graph,
-                            reset_graph_cache as _reset_cache,
-                        )
-
-                        _reset_cache()
-                        _graph = _get_graph(csv_dir=str(PROJECT_ROOT / "data"))
-                        log_pipeline(
-                            f"Admin: Neo4j import \u2014 {_graph.number_of_nodes()} nodes."
-                        )
-                        st.success(
-                            f"\u2705 Graph: {_graph.number_of_nodes()} nodes, "
-                            f"{_graph.number_of_edges()} edges."
-                        )
-                    except Exception as _exc:
-                        st.error(f"Import failed: {_exc}")
-                        log_pipeline(f"ERROR: {_exc}")
-
-        st.markdown("---")
-
-        # ── Data Management ──
-        st.subheader("\U0001f4c1 Data Management")
-        _d1, _d2 = st.columns(2)
-
-        with _d1:
-            _up_path = PROJECT_ROOT / "data" / "uploads"
-            _all_uploaded: list = []
-            if _up_path.exists():
-                _all_uploaded.extend(_up_path.glob("*.pdf"))
-                _papers_dir = _up_path / "papers"
-                if _papers_dir.exists():
-                    _all_uploaded.extend(_papers_dir.glob("*.pdf"))
-                _audio_dir = _up_path / "audio"
-                if _audio_dir.exists():
-                    _all_uploaded.extend(
-                        f for f in _audio_dir.iterdir()
-                        if f.suffix.lower() in (".mp3", ".wav", ".m4a")
-                    )
-            st.markdown(f"**Uploaded Files:** {len(_all_uploaded)}")
-            for _f in _all_uploaded:
-                _sz = _f.stat().st_size / 1024
-                _icon = "\U0001f399\ufe0f" if _f.suffix.lower() in (".mp3", ".wav", ".m4a") else "\U0001f4c4"
-                st.caption(f"{_icon} {_f.name} ({_sz:.0f} KB)")
-            if not _all_uploaded:
-                st.caption("No uploaded files.")
-
-        with _d2:
-            st.markdown("**Index Status:**")
-            if _idx_exists(FAISS_INDEX_DIR):
-                _ip = Path(FAISS_INDEX_DIR) / "index.faiss"
-                _sz_mb = _ip.stat().st_size / (1024 * 1024)
-                st.caption(f"\u2705 FAISS index: {_sz_mb:.2f} MB, {_n_docs} vectors")
+        col_bi, col_tri = st.columns(2)
+        with col_bi:
+            st.markdown("**Bigrams (2-word phrases)**")
+            bigrams = list(_ngrams(words, 2))
+            bigram_fd = nltk.FreqDist(bigrams)
+            top_bigrams = bigram_fd.most_common(15)
+            if top_bigrams:
+                bi_labels = [" ".join(b) for b, _ in top_bigrams]
+                bi_counts = [c for _, c in top_bigrams]
+                fig_bi, ax_bi = plt.subplots(figsize=(6, 5))
+                ax_bi.barh(bi_labels[::-1], bi_counts[::-1], color="#6366f1", edgecolor="white")
+                ax_bi.set_title("Top 15 Bigrams")
+                ax_bi.set_xlabel("Frequency")
+                plt.tight_layout()
+                st.pyplot(fig_bi)
+                plt.close(fig_bi)
             else:
-                st.caption("\u274c No FAISS index built")
-            if _CONCEPTS_CSV.exists():
-                st.caption(f"\u2705 concepts.csv: {_n_concepts} concepts")
-            if _EDGES_CSV.exists():
-                st.caption(f"\u2705 edges.csv: {_n_edges} edges")
+                st.info("Not enough text for bigram analysis.")
 
-        st.markdown("---")
+        with col_tri:
+            st.markdown("**Trigrams (3-word phrases)**")
+            trigrams = list(_ngrams(words, 3))
+            trigram_fd = nltk.FreqDist(trigrams)
+            top_trigrams = trigram_fd.most_common(15)
+            if top_trigrams:
+                tri_labels = [" ".join(t) for t, _ in top_trigrams]
+                tri_counts = [c for _, c in top_trigrams]
+                fig_tri, ax_tri = plt.subplots(figsize=(6, 5))
+                ax_tri.barh(tri_labels[::-1], tri_counts[::-1], color="#10b981", edgecolor="white")
+                ax_tri.set_title("Top 15 Trigrams")
+                ax_tri.set_xlabel("Frequency")
+                plt.tight_layout()
+                st.pyplot(fig_tri)
+                plt.close(fig_tri)
+            else:
+                st.info("Not enough text for trigram analysis.")
 
-        # ── Clear All Data (New Subject) ──
-        st.subheader("\U0001f5d1\ufe0f Clear Database for New Subject")
-        st.warning(
-            "This will **permanently delete** all uploaded files, FAISS index, "
-            "concept/edge CSVs, graph cache, and chat history. "
-            "Use this before ingesting materials for a new subject."
+
+# =====================================================================
+# TAB 5 - Image Processing (OpenCV)
+# =====================================================================
+
+with tab_img:
+    st.header("\U0001f5bc\ufe0f Image Processing \u2014 OpenCV Techniques")
+    st.caption("Extract images from PDFs and apply computer vision transformations.")
+
+    if not st.session_state.processed:
+        st.warning("\u26a0\ufe0f Upload and process documents first (Upload & Process tab).")
+    else:
+        pdf_images = st.session_state.pdf_images
+
+        if not pdf_images:
+            st.info("No images found in uploaded PDFs. Upload an image directly for processing.")
+
+        uploaded_img = st.file_uploader(
+            "Or upload an image directly",
+            type=["png", "jpg", "jpeg", "bmp", "tiff"],
+            key="direct_img_upload",
         )
-        _confirm_clear = st.checkbox(
-            "I confirm I want to delete all data and start fresh.",
-            key="confirm_clear_db",
-        )
-        if st.button(
-            "\U0001f5d1\ufe0f Clear All Data & Reset",
-            type="primary",
-            disabled=not _confirm_clear,
-        ):
-            import shutil
 
-            _cleared: list = []
+        # Determine image source
+        img_bytes = None
+        img_label = ""
 
-            # 1. Delete uploaded files
-            _up = PROJECT_ROOT / "data" / "uploads"
-            if _up.exists():
-                shutil.rmtree(str(_up))
-                _cleared.append("uploaded files")
+        if pdf_images:
+            img_options = [
+                f"{img['filename']} \u2014 Page {img['page']} \u2014 "
+                f"Image {img['img_idx'] + 1} ({img['width']}\u00d7{img['height']})"
+                for img in pdf_images
+            ]
+            source_choices = ["From PDF"]
+            if uploaded_img:
+                source_choices.append("Uploaded image")
+            source_choice = st.radio("Image source", source_choices, horizontal=True)
 
-            # 2. Delete FAISS index
-            _fi = Path(FAISS_INDEX_DIR)
-            if _fi.exists():
-                shutil.rmtree(str(_fi))
-                _cleared.append("FAISS index")
+            if source_choice == "From PDF":
+                selected_img_idx = st.selectbox(
+                    "Select an image", range(len(img_options)),
+                    format_func=lambda i: img_options[i],
+                )
+                img_bytes = pdf_images[selected_img_idx]["image_bytes"]
+                img_label = img_options[selected_img_idx]
+            elif uploaded_img:
+                img_bytes = uploaded_img.read()
+                img_label = uploaded_img.name
+                uploaded_img.seek(0)
+        elif uploaded_img:
+            img_bytes = uploaded_img.read()
+            img_label = uploaded_img.name
+            uploaded_img.seek(0)
 
-            # 3. Delete concepts.csv and edges.csv
-            for _csv_name in (_CONCEPTS_CSV, _EDGES_CSV):
-                _cp = Path(_csv_name)
-                if _cp.exists():
-                    _cp.unlink()
-                    _cleared.append(_cp.name)
-
-            # 4. Reset graph cache
+        if img_bytes:
             try:
-                from backend.neo4j_import import reset_graph_cache
-                reset_graph_cache()
-                _cleared.append("graph cache")
-            except Exception:
-                pass
+                import cv2
+                from PIL import Image
 
-            # 5. Clear session state
-            st.session_state.pipeline_logs = []
-            st.session_state.messages = []
-            st.session_state.generated_qa = []
-            st.session_state.query_sentiments = []
+                img_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+                img_np = np.array(img_pil)
 
-            log_pipeline("Admin: All data cleared for new subject.")
-            st.success(
-                f"\u2705 Cleared: {', '.join(_cleared)}. "
-                "You can now upload materials for a new subject."
+                st.subheader(f"\U0001f4f7 Original Image")
+                st.image(img_pil, caption=img_label, width=600)
+                st.markdown("---")
+
+                gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+
+                st.subheader("\U0001f527 OpenCV Transformations")
+
+                # Row 1: Grayscale + Blur
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown("**Grayscale Conversion**")
+                    fig_g, ax_g = plt.subplots(figsize=(6, 4))
+                    ax_g.imshow(gray, cmap="gray")
+                    ax_g.set_title("Grayscale")
+                    ax_g.axis("off")
+                    st.pyplot(fig_g)
+                    plt.close(fig_g)
+
+                with col2:
+                    blur_k = st.slider("Blur kernel size", 1, 15, 5, step=2, key="blur_k")
+                    st.markdown("**Gaussian Blur**")
+                    blurred = cv2.GaussianBlur(gray, (blur_k, blur_k), 0)
+                    fig_b, ax_b = plt.subplots(figsize=(6, 4))
+                    ax_b.imshow(blurred, cmap="gray")
+                    ax_b.set_title(f"Gaussian Blur (kernel={blur_k})")
+                    ax_b.axis("off")
+                    st.pyplot(fig_b)
+                    plt.close(fig_b)
+
+                # Row 2: Edge Detection + Thresholding
+                col3, col4 = st.columns(2)
+                with col3:
+                    t_low = st.slider("Canny low threshold", 10, 200, 50, key="canny_low")
+                    t_high = st.slider("Canny high threshold", 50, 300, 150, key="canny_high")
+                    st.markdown("**Canny Edge Detection**")
+                    edges_img = cv2.Canny(gray, t_low, t_high)
+                    fig_e, ax_e = plt.subplots(figsize=(6, 4))
+                    ax_e.imshow(edges_img, cmap="gray")
+                    ax_e.set_title(f"Canny Edges (low={t_low}, high={t_high})")
+                    ax_e.axis("off")
+                    st.pyplot(fig_e)
+                    plt.close(fig_e)
+
+                with col4:
+                    thresh_val = st.slider("Threshold value", 0, 255, 127, key="thresh_v")
+                    st.markdown("**Binary Thresholding**")
+                    _, thresh = cv2.threshold(gray, thresh_val, 255, cv2.THRESH_BINARY)
+                    fig_t, ax_t = plt.subplots(figsize=(6, 4))
+                    ax_t.imshow(thresh, cmap="gray")
+                    ax_t.set_title(f"Binary Threshold ({thresh_val})")
+                    ax_t.axis("off")
+                    st.pyplot(fig_t)
+                    plt.close(fig_t)
+
+                st.markdown("---")
+
+                # Image Histograms
+                st.subheader("\U0001f4ca Image Histograms")
+                fig_h, axes_h = plt.subplots(1, 2, figsize=(14, 4))
+                axes_h[0].hist(gray.ravel(), bins=256, range=(0, 256), color="gray", alpha=0.7)
+                axes_h[0].set_title("Grayscale Histogram")
+                axes_h[0].set_xlabel("Pixel Value")
+                axes_h[0].set_ylabel("Frequency")
+
+                color_names = ("red", "green", "blue")
+                for i, color in enumerate(color_names):
+                    axes_h[1].hist(
+                        img_np[:, :, i].ravel(), bins=256, range=(0, 256),
+                        color=color, alpha=0.5, label=color.upper(),
+                    )
+                axes_h[1].set_title("RGB Channel Histograms")
+                axes_h[1].set_xlabel("Pixel Value")
+                axes_h[1].set_ylabel("Frequency")
+                axes_h[1].legend()
+                plt.tight_layout()
+                st.pyplot(fig_h)
+                plt.close(fig_h)
+
+                st.markdown("---")
+
+                # Histogram Equalization
+                st.subheader("\U0001f504 Histogram Equalization")
+                equalized = cv2.equalizeHist(gray)
+
+                col_eq1, col_eq2 = st.columns(2)
+                with col_eq1:
+                    fig_eq1, ax_eq1 = plt.subplots(figsize=(6, 4))
+                    ax_eq1.imshow(gray, cmap="gray")
+                    ax_eq1.set_title("Before Equalization")
+                    ax_eq1.axis("off")
+                    st.pyplot(fig_eq1)
+                    plt.close(fig_eq1)
+                with col_eq2:
+                    fig_eq2, ax_eq2 = plt.subplots(figsize=(6, 4))
+                    ax_eq2.imshow(equalized, cmap="gray")
+                    ax_eq2.set_title("After Histogram Equalization")
+                    ax_eq2.axis("off")
+                    st.pyplot(fig_eq2)
+                    plt.close(fig_eq2)
+
+                fig_eqh, axes_eqh = plt.subplots(1, 2, figsize=(14, 3))
+                axes_eqh[0].hist(gray.ravel(), bins=256, range=(0, 256), color="#6366f1", alpha=0.7)
+                axes_eqh[0].set_title("Histogram Before")
+                axes_eqh[0].set_xlabel("Pixel Value")
+                axes_eqh[1].hist(equalized.ravel(), bins=256, range=(0, 256), color="#10b981", alpha=0.7)
+                axes_eqh[1].set_title("Histogram After Equalization")
+                axes_eqh[1].set_xlabel("Pixel Value")
+                plt.tight_layout()
+                st.pyplot(fig_eqh)
+                plt.close(fig_eqh)
+
+            except ImportError as e:
+                st.error(f"Required library not available: {e}. Install: `pip install opencv-python Pillow`")
+        elif not pdf_images and not uploaded_img:
+            st.info("\U0001f4e4 Upload an image above to start processing.")
+
+
+# =====================================================================
+# TAB 6 - Knowledge Graph
+# =====================================================================
+
+with tab_kg:
+    st.header("\U0001f578\ufe0f Knowledge Graph \u2014 Concept Visualization")
+    st.caption("Concepts extracted with spaCy NLP, relationships visualized with NetworkX.")
+
+    if not st.session_state.processed:
+        st.warning("\u26a0\ufe0f Upload and process documents first (Upload & Process tab).")
+    else:
+        concepts = st.session_state.concepts
+        edges = st.session_state.edges
+
+        if not concepts:
+            st.info(
+                "No concepts extracted. Try uploading PDFs with more text content, "
+                "or ensure spaCy is installed (`python -m spacy download en_core_web_sm`)."
             )
-            st.rerun()
-
-        st.markdown("---")
-
-        # ── Faculty Consent ──
-        st.subheader("\u2705 Faculty Consent Simulation")
-        _consent = st.checkbox(
-            "I, the faculty member, consent to having my lecture materials "
-            "processed and stored for student learning purposes.",
-            key="faculty_consent",
-        )
-        if _consent:
-            st.success("\u2705 Consent recorded.")
-            log_pipeline("Faculty consent granted (simulated).")
         else:
-            st.info("\u2b1c Consent not yet given.")
+            import networkx as nx
 
-        st.markdown("---")
+            G = nx.Graph()
+            for c in concepts:
+                G.add_node(c["concept_id"], label=c["label"], frequency=c["frequency"])
+            for e in edges:
+                G.add_edge(
+                    e["source"], e["target"],
+                    relation=e.get("relation", "co_occurs"),
+                    weight=e.get("weight", 1),
+                )
 
-        # ── Environment Status ──
-        st.subheader("\U0001f4ca Environment Status")
-        _checks = {
-            "FAISS index exists": _idx_exists(FAISS_INDEX_DIR),
-            "Uploaded data present": (
-                (PROJECT_ROOT / "data" / "uploads").exists()
-                and bool(list((PROJECT_ROOT / "data" / "uploads").glob("*.pdf")))
-            ),
-            "concepts.csv exists": _CONCEPTS_CSV.exists(),
-            "edges.csv exists": _EDGES_CSV.exists(),
-            "NEO4J_PASSWORD set": os.getenv("NEO4J_PASSWORD", "") != "changeme",
-            "GEMINI_API_KEY set": bool(os.getenv("GEMINI_API_KEY", "")),
-        }
-        for _label, _ok in _checks.items():
-            st.markdown(f"{'\u2705' if _ok else '\u274c'} {_label}")
-        _unset = [k for k, v in _checks.items() if not v]
-        if _unset:
-            st.warning("**Missing:** " + ", ".join(_unset))
+            # Metrics
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("\U0001f4a1 Concepts", G.number_of_nodes())
+            m2.metric("\U0001f517 Relations", G.number_of_edges())
+            avg_freq = round(
+                sum(c.get("frequency", 0) for c in concepts) / max(len(concepts), 1), 1
+            )
+            m3.metric("\U0001f4ca Avg Frequency", avg_freq)
+            m4.metric("\U0001f504 Graph Density", f"{nx.density(G):.3f}")
 
+            st.markdown("---")
 
-# ─── Startup checklist (console only) ────────────────────────────────────
+            # Concept Frequency Chart + Search
+            col_chart, col_tbl = st.columns([3, 2])
+            df_concepts = pd.DataFrame(concepts)
 
+            with col_chart:
+                st.subheader("\U0001f3f7\ufe0f Top Concepts by Frequency")
+                if "label" in df_concepts.columns and "frequency" in df_concepts.columns:
+                    topn = st.slider("Number of concepts", 10, 50, 20, key="kg_topn")
+                    chart_data = df_concepts.nlargest(topn, "frequency")
+                    fig_cf, ax_cf = plt.subplots(figsize=(12, 5))
+                    ax_cf.barh(
+                        chart_data["label"].values[::-1],
+                        chart_data["frequency"].values[::-1],
+                        color="#6366f1", edgecolor="white",
+                    )
+                    ax_cf.set_title(f"Top {topn} Concepts by Frequency")
+                    ax_cf.set_xlabel("Frequency")
+                    plt.tight_layout()
+                    st.pyplot(fig_cf)
+                    plt.close(fig_cf)
 
-def _print_demo_checklist() -> None:
-    from backend.faiss_index import index_exists as _ie
+            with col_tbl:
+                st.subheader("\U0001f50d Concept Search")
+                search = st.text_input("Filter concepts", placeholder="Type to search\u2026", key="concept_search")
+                disp = df_concepts[["label", "frequency"]].copy()
+                disp.columns = ["Concept", "Frequency"]
+                disp = disp.sort_values("Frequency", ascending=False)
+                if search:
+                    disp = disp[disp["Concept"].str.contains(search, case=False, na=False)]
+                st.dataframe(disp, height=400, hide_index=True)
 
-    print("\n" + "=" * 60)
-    print("  CoursePilot \u2014 CKG-JTT  |  Startup Checklist")
-    print("=" * 60)
-    _items = [
-        ("FAISS index", _ie(FAISS_INDEX_DIR)),
-        (
-            "Uploaded data",
-            (PROJECT_ROOT / "data" / "uploads").exists()
-            and bool(list((PROJECT_ROOT / "data" / "uploads").glob("*.pdf"))),
-        ),
-        ("concepts.csv", (PROJECT_ROOT / "data" / "concepts.csv").exists()),
-        ("NEO4J_PASSWORD", os.getenv("NEO4J_PASSWORD", "") != "changeme"),
-        ("GEMINI_API_KEY", bool(os.getenv("GEMINI_API_KEY", ""))),
-    ]
-    for _name, _ok in _items:
-        print(f"  [{'+'if _ok else 'X'}] {_name}: {'OK' if _ok else 'MISSING'}")
-    print("=" * 60 + "\n")
+            st.markdown("---")
 
+            # Knowledge Graph Visualization
+            st.subheader("\U0001f578\ufe0f Concept Relationship Network")
+            max_nodes = st.slider("Concepts to visualize", 10, 60, 30, key="graph_n")
 
-if "_checklist_printed" not in st.session_state:
-    _print_demo_checklist()
-    st.session_state["_checklist_printed"] = True
+            sorted_nodes = sorted(
+                G.nodes(data=True), key=lambda x: x[1].get("frequency", 0), reverse=True
+            )
+            top_ids = [n for n, _ in sorted_nodes[:max_nodes]]
+            subG = G.subgraph(top_ids).copy()
+
+            if subG.number_of_nodes() > 0:
+                fig_g, ax_g = plt.subplots(figsize=(14, 8))
+                pos = nx.spring_layout(subG, seed=42, k=1.5)
+                node_sizes = [subG.nodes[n].get("frequency", 1) * 80 for n in subG.nodes]
+                labels = {n: subG.nodes[n].get("label", n)[:20] for n in subG.nodes}
+
+                nx.draw_networkx(
+                    subG, pos, ax=ax_g, labels=labels,
+                    node_size=node_sizes, font_size=7,
+                    node_color="#6366f1", edge_color="#e2e8f0",
+                    alpha=0.9, width=0.5,
+                )
+                ax_g.set_title(
+                    f"Knowledge Graph \u2014 Top {len(subG.nodes)} Concepts "
+                    f"(of {G.number_of_nodes()} total)"
+                )
+                ax_g.axis("off")
+                st.pyplot(fig_g)
+                plt.close(fig_g)
+
+                st.caption(
+                    f"Showing {subG.number_of_nodes()} nodes and "
+                    f"{subG.number_of_edges()} edges. "
+                    f"Node size reflects concept frequency."
+                )
+
+            st.markdown("---")
+
+            # Concept Frequency Distribution
+            st.subheader("\U0001f4ca Concept Frequency Distribution")
+            if "frequency" in df_concepts.columns:
+                fig_hist, ax_hist = plt.subplots(figsize=(10, 3))
+                freq_clipped = df_concepts["frequency"].clip(
+                    upper=df_concepts["frequency"].quantile(0.95)
+                )
+                ax_hist.hist(freq_clipped, bins=30, color="#6366f1", alpha=0.7, edgecolor="white")
+                ax_hist.set_xlabel("Frequency")
+                ax_hist.set_ylabel("Number of Concepts")
+                ax_hist.set_title("Distribution of Concept Frequencies")
+                plt.tight_layout()
+                st.pyplot(fig_hist)
+                plt.close(fig_hist)

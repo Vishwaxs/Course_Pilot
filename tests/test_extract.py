@@ -2,12 +2,11 @@
 # Run: pytest tests/test_extract.py -v
 
 """
-test_extract.py — Tests for backend.extract_concepts and backend.ingest_pdf.
+test_extract.py — Tests for backend.extract_concepts.
 """
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 from pathlib import Path
@@ -17,82 +16,6 @@ import pytest
 # Ensure project root on path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
-
-
-# ---------------------------------------------------------------------------
-# Test: slide ingestion from JSON
-# ---------------------------------------------------------------------------
-
-class TestIngestPDF:
-    """Tests for the PDF / JSON ingestion module."""
-
-    def test_load_slides_from_json(self):
-        """Sample slides.json should load correctly."""
-        from backend.ingest_pdf import load_slides_from_json
-
-        path = "data/sample/slides.json"
-        if not Path(path).exists():
-            pytest.skip("Sample data not found.")
-
-        slides = load_slides_from_json(path)
-        assert isinstance(slides, list)
-        assert len(slides) >= 1
-        # Each slide should have required keys
-        for s in slides:
-            assert "slide_id" in s
-            assert "body" in s
-
-    def test_slides_to_documents(self):
-        """Slides should convert to canonical documents."""
-        from backend.ingest_pdf import slides_to_documents
-
-        slides = [
-            {
-                "slide_id": "TEST_S1",
-                "course": "TEST",
-                "lecture": 1,
-                "slide_number": 1,
-                "title": "Test Title",
-                "body": "Test body content about algorithms.",
-            }
-        ]
-        docs = slides_to_documents(slides)
-        assert len(docs) == 1
-        assert docs[0]["doc_id"] == "TEST_S1"
-        assert docs[0]["source_type"] == "slide"
-        assert "Test Title" in docs[0]["text"]
-
-    def test_papers_to_documents(self):
-        """Past papers should convert to per-question documents."""
-        from backend.ingest_pdf import papers_to_documents
-
-        papers = [
-            {
-                "paper_id": "TEST_MID",
-                "course": "TEST",
-                "exam_type": "Mid",
-                "year": 2024,
-                "questions": [
-                    {"q_id": "Q1", "text": "Explain stacks.", "marks": 10, "topics": ["stacks"]},
-                    {"q_id": "Q2", "text": "What is BFS?", "marks": 15, "topics": ["BFS"]},
-                ],
-            }
-        ]
-        docs = papers_to_documents(papers)
-        assert len(docs) == 2
-        assert docs[0]["source_type"] == "past_paper"
-        assert "stacks" in docs[0]["metadata"]["topics"]
-
-    def test_build_all_sample_documents(self):
-        """build_all_sample_documents should return non-empty list."""
-        from backend.ingest_pdf import build_all_sample_documents
-
-        if not Path("data/sample/slides.json").exists():
-            pytest.skip("Sample data not found.")
-
-        docs = build_all_sample_documents("data/sample")
-        assert isinstance(docs, list)
-        assert len(docs) >= 5  # At least slides + transcript segments + papers
 
 
 # ---------------------------------------------------------------------------
@@ -178,11 +101,14 @@ class TestExtractConcepts:
         assert Path(c_path).exists()
         assert Path(e_path).exists()
 
-        from backend.neo4j_import import load_concepts_csv, load_edges_csv
+        # Verify CSV content by reading back
+        import csv
+        with open(c_path, "r", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        assert len(rows) == 1
+        assert rows[0]["concept_id"] == "binary_tree"
 
-        loaded_c = load_concepts_csv(c_path)
-        loaded_e = load_edges_csv(e_path)
-        assert len(loaded_c) == 1
-        assert loaded_c[0]["concept_id"] == "binary_tree"
-        assert len(loaded_e) == 1
-        assert loaded_e[0]["source"] == "binary_tree"
+        with open(e_path, "r", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        assert len(rows) == 1
+        assert rows[0]["source"] == "binary_tree"

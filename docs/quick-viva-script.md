@@ -1,5 +1,4 @@
-<!-- :   -->
-# 🎤 Quick Viva Script — CoursePilot (3 minutes)
+# Quick Viva Script — CoursePilot (3 minutes)
 
 > Use this script for your CIA-3 viva presentation.
 
@@ -7,96 +6,79 @@
 
 ## Slide 1: Introduction (30 seconds)
 
-> "CoursePilot is a Campus Knowledge Graph and Just-In-Time Tutor built for
-> Christ University. It ingests course slides, lecture transcripts, and past
-> exam papers, then lets students ask questions and get concise answers with
-> full provenance — which slide, which lecture segment, and what timestamp."
+> "CoursePilot is a Document Analytics and Visualization Dashboard built with
+> Streamlit. It lets users upload PDF documents and perform NLP analysis,
+> generate word clouds, run image processing, and visualize concept
+> relationships — all through an interactive web interface."
 
-**Show:** Run `streamlit run app.py` and point to the 4 tabs.
+**Show:** Run `streamlit run app.py` and point to the 7 tabs.
 
 ---
 
-## Slide 2: Ingestion Pipeline (45 seconds)
+## Slide 2: Upload & Text Processing (45 seconds)
 
-> "Let me show the ingestion flow. I'll click Upload & Ingest and run the
-> pipeline on our sample data."
+> "Let me show the upload flow. I'll upload a sample PDF and show the
+> text processing features."
 
 **Demo steps:**
-1. Go to **Upload & Ingest** tab.
-2. Click **Run Ingestion Pipeline** (uses bundled sample data).
-3. Show the progress bar and logs.
-4. Point out: "It extracted 6 slides, 7 transcript segments, and 8 exam
-   questions. Then it computed sentence embeddings and built a FAISS index."
+1. Go to **Upload & Process** tab.
+2. Upload a PDF file.
+3. Show extracted text and images.
+4. Switch to **Text Processing** tab.
+5. Show tokenization, POS tagging, NER, and lemmatization results.
 
 ---
 
-## Slide 3: Student Chat (60 seconds)
+## Slide 3: Visualizations (60 seconds)
 
-> "Now the core feature — Student Chat."
+> "Now the visualization features."
 
 **Demo steps:**
-1. Go to **Student Chat** tab.
-2. Toggle **Simulate Student Query** ON (uses canned data for instant demo).
-3. Type: "What is the difference between a stack and a queue?"
-4. Click **Ask**.
-5. Show:
-   - **Answer**: concise, 50-200 words.
-   - **Provenance**: slide CS501_L1_S3 and lecture segment at 210s.
-   - **Practice Questions**: matching past-paper questions.
-
-> "Every answer comes with provenance — the exact source and timestamp.
-> Students can trace back to the original material."
+1. Go to **Word Cloud & Frequency** tab.
+2. Show generated word cloud and frequency bar chart.
+3. Switch to **Document Analytics** tab.
+4. Show TF-IDF analysis and document similarity heatmap.
+5. Show sentiment analysis results.
 
 ---
 
-## Slide 4: Faculty Dashboard (30 seconds)
+## Slide 4: Image Processing & Knowledge Graph (30 seconds)
 
-> "Faculty get a coverage dashboard."
+> "We also have image processing and knowledge graph visualization."
 
 **Demo steps:**
-1. Switch role to **faculty** in the sidebar.
-2. Go to **Faculty Dashboard**.
-3. Show:
-   - **Concept heatmap** (top-20 concepts by frequency).
-   - **Gap analysis**: topics tested more than taught.
-   - **Micro-lesson suggestions**.
-   - **Knowledge graph** visualization.
+1. Go to **Image Processing** tab.
+2. Show OpenCV operations: grayscale, blur, edge detection.
+3. Switch to **Knowledge Graph** tab.
+4. Show the concept relationship graph built with NetworkX.
 
 ---
 
-## Slide 5: Limitations & Next Steps (15 seconds)
+## Slide 5: Technical Summary (15 seconds)
 
-> "Current limitations: heuristic-based relations, no real SSO, local LLM
-> only. Next steps would be:
-> - Finer prerequisite inference with curriculum ordering.
-> - Integration with campus LMS.
-> - Real-time student performance tracking."
+> "The app uses pdfplumber for PDF extraction, spaCy and NLTK for NLP,
+> OpenCV for image processing, scikit-learn for TF-IDF and similarity
+> analysis, and NetworkX for graph visualization."
 
 ---
 
 ## Key Technical Points (if asked)
 
-- **NLP**: spaCy noun-chunk extraction + co-occurrence heuristics.
-- **Embeddings**: sentence-transformers `all-mpnet-base-v2` (768-dim).
-- **Vector Store**: FAISS FlatL2 for exact k-NN.
-- **Graph**: NetworkX in-memory (Neo4j optional via Docker).
-- **RAG**: Template-based answer generation (local distilbart optional).
-- **Privacy**: Faculty consent simulation; sample data only.
+- **NLP**: spaCy noun-chunk extraction + NLTK tokenization, POS, NER.
+- **Text Analytics**: TF-IDF with scikit-learn, cosine similarity heatmaps.
+- **Sentiment**: VADER sentiment analysis via NLTK.
+- **Image Processing**: OpenCV — grayscale, blur, Canny edges, thresholding, histogram equalization.
+- **Graph**: NetworkX for concept knowledge graph visualization.
+- **PDF Processing**: pdfplumber for text, PyMuPDF for images.
 
 ---
 
 ## Commands Cheat Sheet
 
 ```bash
-# Build index
-python scripts/build_faiss.py --data-dir data/sample
-
 # Run app
 streamlit run app.py
 
 # Run tests
 pytest tests/ -v
-
-# Evaluate retrieval
-python scripts/eval_retrieval.py
 ```
