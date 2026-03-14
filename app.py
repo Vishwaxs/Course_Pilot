@@ -1038,7 +1038,7 @@ with tab_img:
                 plt.close(fig_eqh)
 
             except ImportError as e:
-                st.error(f"Required library not available: {e}. Install: `pip install opencv-python Pillow`")
+                st.error(f"Required library not available: {e}. Install: `pip install opencv-python-headless Pillow`")
         elif not pdf_images and not uploaded_img:
             st.info("\U0001f4e4 Upload an image above to start processing.")
 
