@@ -1014,21 +1014,24 @@ with tab_img:
 
                 st.markdown("---")
 
-                # Histogram Equalization
+                # Histogram Equalization (colour — equalize Y channel in YCrCb)
                 st.subheader("\U0001f504 Histogram Equalization")
-                equalized = cv2.equalizeHist(gray)
+                img_ycrcb = cv2.cvtColor(cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR), cv2.COLOR_BGR2YCrCb)
+                img_ycrcb[:, :, 0] = cv2.equalizeHist(img_ycrcb[:, :, 0])
+                equalized_color = cv2.cvtColor(img_ycrcb, cv2.COLOR_YCrCb2BGR)
+                equalized_color = cv2.cvtColor(equalized_color, cv2.COLOR_BGR2RGB)
 
                 col_eq1, col_eq2 = st.columns(2)
                 with col_eq1:
                     fig_eq1, ax_eq1 = plt.subplots(figsize=(6, 4))
-                    ax_eq1.imshow(gray, cmap="gray")
+                    ax_eq1.imshow(img_np)
                     ax_eq1.set_title("Before Equalization")
                     ax_eq1.axis("off")
                     st.pyplot(fig_eq1)
                     plt.close(fig_eq1)
                 with col_eq2:
                     fig_eq2, ax_eq2 = plt.subplots(figsize=(6, 4))
-                    ax_eq2.imshow(equalized, cmap="gray")
+                    ax_eq2.imshow(equalized_color)
                     ax_eq2.set_title("After Histogram Equalization")
                     ax_eq2.axis("off")
                     st.pyplot(fig_eq2)
@@ -1038,7 +1041,7 @@ with tab_img:
                 axes_eqh[0].hist(gray.ravel(), bins=256, range=(0, 256), color=_CHART_COLOR, alpha=0.7)
                 axes_eqh[0].set_title("Histogram Before")
                 axes_eqh[0].set_xlabel("Pixel Value")
-                axes_eqh[1].hist(equalized.ravel(), bins=256, range=(0, 256), color="#10b981", alpha=0.7)
+                axes_eqh[1].hist(cv2.cvtColor(equalized_color, cv2.COLOR_RGB2GRAY).ravel(), bins=256, range=(0, 256), color="#10b981", alpha=0.7)
                 axes_eqh[1].set_title("Histogram After Equalization")
                 axes_eqh[1].set_xlabel("Pixel Value")
                 plt.tight_layout()
