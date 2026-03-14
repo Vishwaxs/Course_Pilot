@@ -512,7 +512,7 @@ with tab_text:
                 )
 
             st.subheader("\U0001f4c4 Raw Text")
-            st.text_area("", sample_text, height=120, disabled=True, key="raw_text_view")
+            st.text_area("Raw text content", sample_text, height=120, disabled=True, key="raw_text_view", label_visibility="collapsed")
             st.markdown("---")
 
             # Tokenization
