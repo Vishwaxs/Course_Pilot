@@ -909,13 +909,17 @@ with tab_img:
                 img_bytes = pdf_images[selected_img_idx]["image_bytes"]
                 img_label = img_options[selected_img_idx]
             elif uploaded_img:
-                img_bytes = uploaded_img.read()
+                _cv_key = f"_cv_{uploaded_img.name}_{uploaded_img.size}"
+                if _cv_key not in st.session_state:
+                    st.session_state[_cv_key] = uploaded_img.read()
+                img_bytes = st.session_state[_cv_key]
                 img_label = uploaded_img.name
-                uploaded_img.seek(0)
         elif uploaded_img:
-            img_bytes = uploaded_img.read()
+            _cv_key = f"_cv_{uploaded_img.name}_{uploaded_img.size}"
+            if _cv_key not in st.session_state:
+                st.session_state[_cv_key] = uploaded_img.read()
+            img_bytes = st.session_state[_cv_key]
             img_label = uploaded_img.name
-            uploaded_img.seek(0)
 
         if img_bytes:
             try:
@@ -923,6 +927,10 @@ with tab_img:
                 from PIL import Image
 
                 img_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+                _w, _h = img_pil.size
+                if max(_w, _h) > 1200:
+                    _scale = 1200 / max(_w, _h)
+                    img_pil = img_pil.resize((int(_w * _scale), int(_h * _scale)), Image.LANCZOS)
                 img_np = np.array(img_pil)
 
                 st.subheader(f"\U0001f4f7 Original Image")
